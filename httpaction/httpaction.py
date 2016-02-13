@@ -22,8 +22,8 @@ def index():
     
     def poweron():
         if mac != None:
-           if ip != None:
-               command = "{}wakeonlan -i {} {}".format(wakeonlanPath, ip,  mac)
+           if host != None:
+               command = "{}wakeonlan -i {} {}".format(wakeonlanPath, host,  mac)
            else:
                command = "{}wakeonlan {}".format(wakeonlanPath, mac)
            for i in range(3):
@@ -36,9 +36,9 @@ def index():
         else:
             return "Action 'poweron' must have parameter 'mac'!"
 
-    def poweron():
-        if user != None and ip != None:
-            command = "ssh -t {}@{} 'sudo shutdown -h now'".format(user, ip)
+    def poweroff():
+        if user != None and host != None:
+            command = "ssh -t {}@{} 'sudo shutdown -h now'".format(user, host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
@@ -46,13 +46,13 @@ def index():
             return stdout + stderr
         elif user == None:
             return "Action 'poweroff' must have parameter 'user'!"
-        elif ip == None:
-            return "Action 'poweroff' must have parameter 'ip'!"
+        elif host == None:
+            return "Action 'poweroff' must have parameter 'host'!"
             
     action = request.args.get('action')
     mac = request.args.get('mac')
     user = request.args.get('user')
-    ip = request.args.get('ip')
+    host = request.args.get('host')
     if action == 'poweron'.lower():
         return poweron()
     elif action == 'poweroff'.lower():
