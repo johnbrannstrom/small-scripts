@@ -63,7 +63,7 @@ def index():
             
     def ping():
         if host != None:
-            command = "ping -n 3 {}'".format(host)
+            command = "ping -n 3 {}".format(host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
