@@ -55,17 +55,15 @@ def index():
             return "Action 'poweroff' must have parameter 'host'!"
             
     def ping():
-        if user != None and host != None:
-            command = "ssh -t {}@{} 'shutdown -h now'".format(user, host)
+        if host != None:
+            command = "ping -n 3 {}'".format(host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
             stdout, stderr = p.communicate()
             return stdout + stderr
-        elif user == None:
-            return "Action 'poweroff' must have parameter 'user'!"
-        elif host == None:
-            return "Action 'poweroff' must have parameter 'host'!"
+        else:
+            return "Action 'ping' must have parameter 'host'!"
             
     action = request.args.get('action')
     mac = request.args.get('mac')
