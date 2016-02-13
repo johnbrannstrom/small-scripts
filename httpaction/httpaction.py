@@ -35,12 +35,28 @@ def index():
            return stdout + stderr
         else:
             return "Action 'poweron' must have parameter 'mac'!"
+
+    def poweron():
+        if user != None and ip != None:
+            command = "ssh -t {}@{} 'sudo shutdown -h now'".format(user, ip)
+            p = subprocess.Popen(
+                   command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                   shell=True)
+            stdout, stderr = p.communicate()
+            return stdout + stderr
+        elif user == None:
+            return "Action 'poweroff' must have parameter 'user'!"
+        elif ip == None:
+            return "Action 'poweroff' must have parameter 'ip'!"
             
     action = request.args.get('action')
     mac = request.args.get('mac')
+    user = request.args.get('user')
     ip = request.args.get('ip')
     if action == 'poweron'.lower():
         return poweron()
+    elif action == 'poweroff'.lower():
+        return poweroff()
     else:
         return "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff'!".format(action)
 
