@@ -23,7 +23,7 @@ def index():
     def poweron():
         if mac != None:
            if ip != None:
-               command = "{}wakeonlan -i {} {}".format(ip, wakeonlanPath, mac)
+               command = "{}wakeonlan -i {} {}".format(wakeonlanPath, ip,  mac)
            else:
                command = "{}wakeonlan {}".format(wakeonlanPath, mac)
            for i in range(3):
