@@ -19,12 +19,13 @@ httpaction = Flask(__name__)
 
 @httpaction.route(httpPath)
 def index():
-    action = request.args.get('action')
-    mac = request.args.get('mac')
-    ip = request.args.get('ip')
-    if action == 'poweron'.lower():
-        if mac != None and ip != None:
-           command = "{}wakeonlan -i {} {}".format(wakeonlanPath, ip, mac)
+    
+    def poweron():
+        if mac != None:
+           if ip != None:
+               command = "{}wakeonlan -i {} {}".format(ip, wakeonlanPath, mac)
+           else:
+               command = "{}wakeonlan {}".format(wakeonlanPath, mac)
            for i in range(3):
                p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -32,8 +33,16 @@ def index():
                stdout, stderr = p.communicate()
                sleep(0.1)
            return stdout + stderr
+        else:
+            return "Action 'poweron' must have parameter 'mac'!"
+            
+    action = request.args.get('action')
+    mac = request.args.get('mac')
+    ip = request.args.get('ip')
+    if action == 'poweron'.lower():
+        return poweron()
     else:
-        return "Unknown action '{}'!".format(action)
+        return "Unknown action '{}' choose from 'poweron, poweroff'!".format(action)
 
 if __name__ == '__main__':
     httpaction.run(debug=debug, host='0.0.0.0', port=tcpPort)
