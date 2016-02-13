@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import subprocess
 from time import sleep
 from flask import Flask
