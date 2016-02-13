@@ -18,7 +18,10 @@ debug = True
 wakeonlanPath = '/usr/bin/'
 
 # Path to the ping command
-wakeonlanPath = '/bin/'
+pingPath = '/bin/'
+
+# Path to the ssh command
+sshPath = '/usr/bin/'
 
 httpaction = Flask(__name__)
 
@@ -43,7 +46,7 @@ def index():
 
     def poweroff():
         if user != None and host != None:
-            command = "ssh -t {}@{} 'shutdown -h now'".format(user, host)
+            command = "{}ssh -t {}@{} 'shutdown -h now'".format(sshPath, user, host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
