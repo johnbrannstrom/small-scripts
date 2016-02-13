@@ -38,7 +38,7 @@ def index():
 
     def poweroff():
         if user != None and host != None:
-            command = "ssh -t {}@{} 'sudo shutdown -h now'".format(user, host)
+            command = "ssh -t {}@{} 'shutdown -h now'".format(user, host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
