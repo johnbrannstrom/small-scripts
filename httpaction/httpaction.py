@@ -17,6 +17,9 @@ debug = True
 # Path to the wakeonlan command
 wakeonlanPath = '/usr/bin/'
 
+# Path to the ping command
+wakeonlanPath = '/bin/'
+
 httpaction = Flask(__name__)
 
 @httpaction.route(httpPath)
@@ -51,6 +54,19 @@ def index():
         elif host == None:
             return "Action 'poweroff' must have parameter 'host'!"
             
+    def ping():
+        if user != None and host != None:
+            command = "ssh -t {}@{} 'shutdown -h now'".format(user, host)
+            p = subprocess.Popen(
+                   command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                   shell=True)
+            stdout, stderr = p.communicate()
+            return stdout + stderr
+        elif user == None:
+            return "Action 'poweroff' must have parameter 'user'!"
+        elif host == None:
+            return "Action 'poweroff' must have parameter 'host'!"
+            
     action = request.args.get('action')
     mac = request.args.get('mac')
     user = request.args.get('user')
@@ -59,8 +75,10 @@ def index():
         return poweron()
     elif action == 'poweroff'.lower():
         return poweroff()
+    elif action == 'ping'.lower():
+        return ping()
     else:
-        return "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff'!".format(action)
+        return "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff, ping'!".format(action)
 
 if __name__ == '__main__':
     httpaction.run(debug=debug, host='0.0.0.0', port=tcpPort)
