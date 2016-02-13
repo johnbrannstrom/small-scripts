@@ -42,7 +42,7 @@ def index():
     if action == 'poweron'.lower():
         return poweron()
     else:
-        return "Unknown action '{}' choose from 'poweron, poweroff'!".format(action)
+        return "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff'!".format(action)
 
 if __name__ == '__main__':
     httpaction.run(debug=debug, host='0.0.0.0', port=tcpPort)
