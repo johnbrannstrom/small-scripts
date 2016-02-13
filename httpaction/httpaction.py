@@ -46,7 +46,7 @@ def index():
 
     def poweroff():
         if user != None and host != None:
-            command = "{}ssh -T {}@{} 'shutdown -h now'".format(sshPath, user, host)
+            command = "{}ssh -o StrictHostKeyChecking=no -T {}@{} 'shutdown -h now'".format(sshPath, user, host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
