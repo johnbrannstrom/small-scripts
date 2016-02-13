@@ -23,6 +23,9 @@ pingPath = '/bin/'
 # Path to the ssh command
 sshPath = '/usr/bin/'
 
+# Path to ssh key directory
+sshKeyPath = '/home/john/.ssh/id_rsa'
+
 httpaction = Flask(__name__)
 
 @httpaction.route(httpPath)
@@ -46,7 +49,8 @@ def index():
 
     def poweroff():
         if user != None and host != None:
-            command = "{}ssh -o StrictHostKeyChecking=no -T {}@{} 'shutdown -h now'".format(sshPath, user, host)
+            command = "{}ssh -i {} -T {}@{} 'shutdown -h now'"
+            command = command.format(sshPath, sshKeyPath, user, host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
