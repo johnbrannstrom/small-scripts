@@ -71,7 +71,7 @@ def index():
                    shell=True)
             stdout, stderr = p.communicate()
             result = re.match('.*0 received.*', str(stdout), re.DOTALL)
-            pingOk = result == None:
+            pingOk = result == None
             if serial != None and ep != None and apiKey != None:
                 # Set the status of a Zipato sensor to the ping status
                 command = "https://my.zipato.com/zipato-web/remoting/attribute/set?serial={}&ep={}&apiKey={}&state={}"
