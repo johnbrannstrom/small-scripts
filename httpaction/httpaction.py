@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import subprocess
+import re
 from time import sleep
 from flask import Flask
 from flask import request
@@ -63,11 +64,16 @@ def index():
             
     def ping():
         if host != None:
-            command = "ping -n 3 {}".format(host)
+            command = "{}ping -c 2 {}".format(pingPath, host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
             stdout, stderr = p.communicate()
+            result = re.match('.*0 received.*', str(stdout), re.DOTALL)
+            if result == None:
+                return '1'
+            else:
+                return '0'
             return stdout + stderr
         else:
             return "Action 'ping' must have parameter 'host'!"
