@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import subprocess
+import requests
 import re
 from time import sleep
 from flask import Flask
@@ -70,11 +71,22 @@ def index():
                    shell=True)
             stdout, stderr = p.communicate()
             result = re.match('.*0 received.*', str(stdout), re.DOTALL)
-            if result == None:
-                return '1'
+            pingOk = result == None:
+            if serial != None and ep != None and apiKey != None:
+                # Set the status of a Zipato sensor to the ping status
+                command = "https://my.zipato.com/zipato-web/remoting/attribute/set?serial={}&ep={}&apiKey={}&state={}"
+                if pingOk:
+                    command = command.format(serial, ep, apiKey, 'true')
+                else:
+                    command = command.format(serial, ep, apiKey, 'false')
+                r = requests.get(command)
+                return str(r.status_code)
             else:
-                return '0'
-            return stdout + stderr
+                # Just return a the ping status
+                if pingOk:
+                    return '1'
+                else:
+                    return '0'
         else:
             return "Action 'ping' must have parameter 'host'!"
             
@@ -82,6 +94,9 @@ def index():
     mac = request.args.get('mac')
     user = request.args.get('user')
     host = request.args.get('host')
+    serial = request.args.get('serial')
+    ep = request.args.get('ep')
+    apiKey = request.args.get('apiKey')
     if action == 'poweron'.lower():
         return poweron()
     elif action == 'poweroff'.lower():
