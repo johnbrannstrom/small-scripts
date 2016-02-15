@@ -16,6 +16,12 @@ httpPath = '/'
 # Sets if debug mode should be used
 debug = True
 
+# Set if logging should be used
+logging = True
+
+# Full path and name of log file
+logFile = '/home/john/httpaction'
+
 # Path to the wakeonlan command
 wakeonlanPath = '/usr/bin/'
 
@@ -100,14 +106,19 @@ def index():
     serial = request.args.get('serial')
     ep = request.args.get('ep')
     apiKey = request.args.get('apiKey')
-    if action == 'poweron'.lower():
-        return poweron()
-    elif action == 'poweroff'.lower():
-        return poweroff()
-    elif action == 'ping'.lower():
-        return ping()
+    if logging:
+        file = open(logFile,'a')
+    if action.lower() == 'poweron':
+        result = poweron()
+    elif action.lower() == 'poweroff':
+        result = poweroff()
+    elif action.lower() == 'ping':
+        result = ping()
     else:
-        return "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff, ping'!".format(action)
-
+        result = "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff, ping'!".format(action)
+    if logging:
+        file.close()
+    return result
+    
 if __name__ == '__main__':
     httpaction.run(debug=debug, host='0.0.0.0', port=tcpPort)
