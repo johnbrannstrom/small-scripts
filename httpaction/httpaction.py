@@ -3,6 +3,7 @@
 import subprocess
 import requests
 import re
+import datetime
 from time import sleep
 from flask import Flask
 from flask import request
@@ -15,6 +16,12 @@ httpPath = '/'
 
 # Sets if debug mode should be used
 debug = True
+
+# Set if logging should be used
+logging = True
+
+# Full path and name of log file
+logFileName = '/home/john/httpaction'
 
 # Path to the wakeonlan command
 wakeonlanPath = '/usr/bin/'
@@ -33,22 +40,37 @@ sshKeyPath = '/home/john/.ssh/id_rsa'
 
 httpaction = Flask(__name__)
 
+class LogFile():
+    
+    def __init__(self, name):
+        self.file = open(name,'a+')
+    
+    def write(self, message):
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        line = now + ' ' + message + '\n'
+        self.file.write(line)
+    
+    def close(self):
+        self.file.close()
+
 @httpaction.route(httpPath)
 def index():
     
     def poweron():
         if mac != None:
-           if host != None:
-               command = "{}wakeonlan -i {} {}".format(wakeonlanPath, host,  mac)
-           else:
-               command = "{}wakeonlan {}".format(wakeonlanPath, mac)
-           for i in range(3):
-               p = subprocess.Popen(
+            if host != None:
+                command = "{}wakeonlan -i {} {}".format(wakeonlanPath, host,  mac)
+            else:
+                command = "{}wakeonlan {}".format(wakeonlanPath, mac)
+            for i in range(3):
+                p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
-               stdout, stderr = p.communicate()
-               sleep(0.1)
-           return stdout + stderr
+                stdout, stderr = p.communicate()
+                sleep(0.1)
+            if logging:
+                logFile.write(command)
+            return stdout + stderr
         else:
             return "Action 'poweron' must have parameter 'mac'!"
 
@@ -60,6 +82,8 @@ def index():
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
             stdout, stderr = p.communicate()
+            if logging:
+                logFile.write(command)
             return stdout + stderr
         elif user == None:
             return "Action 'poweroff' must have parameter 'user'!"
@@ -70,9 +94,11 @@ def index():
         if host != None:
             command = "{}ping -c {} {}".format(pingPath, str(pingCount), host)
             p = subprocess.Popen(
-                   command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                   shell=True)
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                shell=True)
             stdout, stderr = p.communicate()
+            if logging:
+                logFile.write(command)
             result = re.match('.*0 received.*', str(stdout), re.DOTALL)
             pingOk = result == None
             if serial != None and ep != None and apiKey != None:
@@ -83,6 +109,8 @@ def index():
                 else:
                     command = command.format(serial, ep, apiKey, 'false')
                 r = requests.get(command)
+                if logging:
+                    logFile.write(command)
                 return str(r.status_code)
             else:
                 # Just return a the ping status
@@ -100,14 +128,19 @@ def index():
     serial = request.args.get('serial')
     ep = request.args.get('ep')
     apiKey = request.args.get('apiKey')
-    if action == 'poweron'.lower():
-        return poweron()
-    elif action == 'poweroff'.lower():
-        return poweroff()
-    elif action == 'ping'.lower():
-        return ping()
+    if logging:
+        logFile = LogFile(logFileName)
+    if action.lower() == 'poweron':
+        result = poweron()
+    elif action.lower() == 'poweroff':
+        result = poweroff()
+    elif action.lower() == 'ping':
+        result = ping()
     else:
-        return "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff, ping'!".format(action)
-
+        result = "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff, ping'!".format(action)
+    if logging:
+        logFile.close()
+    return result
+    
 if __name__ == '__main__':
     httpaction.run(debug=debug, host='0.0.0.0', port=tcpPort)
