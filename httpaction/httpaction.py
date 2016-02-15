@@ -3,6 +3,7 @@
 import subprocess
 import requests
 import re
+from datetime import datetime
 from time import sleep
 from flask import Flask
 from flask import request
@@ -20,7 +21,7 @@ debug = True
 logging = True
 
 # Full path and name of log file
-logFile = '/home/john/httpaction'
+logFileName = '/home/john/httpaction'
 
 # Path to the wakeonlan command
 wakeonlanPath = '/usr/bin/'
@@ -54,6 +55,9 @@ def index():
                    shell=True)
                stdout, stderr = p.communicate()
                sleep(0.1)
+            if logging:
+                line = datetime.now().isoformat() + ' ' + command
+                logFile.write(line)
            return stdout + stderr
         else:
             return "Action 'poweron' must have parameter 'mac'!"
@@ -66,6 +70,9 @@ def index():
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
             stdout, stderr = p.communicate()
+            if logging:
+                line = datetime.now().isoformat() + ' ' + command
+                logFile.write(line)
             return stdout + stderr
         elif user == None:
             return "Action 'poweroff' must have parameter 'user'!"
@@ -76,9 +83,12 @@ def index():
         if host != None:
             command = "{}ping -c {} {}".format(pingPath, str(pingCount), host)
             p = subprocess.Popen(
-                   command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                   shell=True)
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                shell=True)
             stdout, stderr = p.communicate()
+            if logging:
+                line = datetime.now().isoformat() + ' ' + command
+                logFile.write(line)
             result = re.match('.*0 received.*', str(stdout), re.DOTALL)
             pingOk = result == None
             if serial != None and ep != None and apiKey != None:
@@ -89,6 +99,9 @@ def index():
                 else:
                     command = command.format(serial, ep, apiKey, 'false')
                 r = requests.get(command)
+                if logging:
+                    line = datetime.now().isoformat() + ' ' + command
+                    logFile.write(line)
                 return str(r.status_code)
             else:
                 # Just return a the ping status
@@ -107,7 +120,7 @@ def index():
     ep = request.args.get('ep')
     apiKey = request.args.get('apiKey')
     if logging:
-        file = open(logFile,'a')
+        logFile = open(logFile,'a+')
     if action.lower() == 'poweron':
         result = poweron()
     elif action.lower() == 'poweroff':
@@ -117,7 +130,7 @@ def index():
     else:
         result = "Unknown value '{}' for paramater 'action'. Choose from 'poweron, poweroff, ping'!".format(action)
     if logging:
-        file.close()
+        logFile.close()
     return result
     
 if __name__ == '__main__':
