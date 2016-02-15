@@ -43,15 +43,15 @@ httpaction = Flask(__name__)
 class LogFile():
     
     def __init__(self, name):
-        file = open(name,'a+')
+        self.file = open(name,'a+')
     
     def write(self, message):
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        line = now + ' ' + command + '\n'
-        file.write(line)
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        line = now + ' ' + message + '\n'
+        self.file.write(line)
     
-    def close():
-        file.close()
+    def close(self):
+        self.file.close()
 
 @httpaction.route(httpPath)
 def index():
@@ -69,8 +69,7 @@ def index():
                 stdout, stderr = p.communicate()
                 sleep(0.1)
             if logging:
-                line = datetime.now().isoformat() + ' ' + command
-                logFile.write(line)
+                logFile.write(command)
             return stdout + stderr
         else:
             return "Action 'poweron' must have parameter 'mac'!"
@@ -84,8 +83,7 @@ def index():
                    shell=True)
             stdout, stderr = p.communicate()
             if logging:
-                line = datetime.now().isoformat() + ' ' + command
-                logFile.write(line)
+                logFile.write(command)
             return stdout + stderr
         elif user == None:
             return "Action 'poweroff' must have parameter 'user'!"
@@ -100,8 +98,7 @@ def index():
                 shell=True)
             stdout, stderr = p.communicate()
             if logging:
-                line = datetime.now().isoformat() + ' ' + command
-                logFile.write(line)
+                logFile.write(command)
             result = re.match('.*0 received.*', str(stdout), re.DOTALL)
             pingOk = result == None
             if serial != None and ep != None and apiKey != None:
@@ -113,8 +110,7 @@ def index():
                     command = command.format(serial, ep, apiKey, 'false')
                 r = requests.get(command)
                 if logging:
-                    line = datetime.now().isoformat() + ' ' + command
-                    logFile.write(line)
+                    logFile.write(command)
                 return str(r.status_code)
             else:
                 # Just return a the ping status
@@ -133,7 +129,7 @@ def index():
     ep = request.args.get('ep')
     apiKey = request.args.get('apiKey')
     if logging:
-        logFile = open(logFileName,'a+')
+        logFile = LogFile(logFileName)
     if action.lower() == 'poweron':
         result = poweron()
     elif action.lower() == 'poweroff':
