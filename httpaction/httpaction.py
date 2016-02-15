@@ -22,6 +22,9 @@ wakeonlanPath = '/usr/bin/'
 # Path to the ping command
 pingPath = '/bin/'
 
+# Number of pings
+pingCount = 5
+
 # Path to the ssh command
 sshPath = '/usr/bin/'
 
@@ -65,7 +68,7 @@ def index():
             
     def ping():
         if host != None:
-            command = "{}ping -c 2 {}".format(pingPath, host)
+            command = "{}ping -c {} {}".format(pingPath, str(pingCount), host)
             p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
