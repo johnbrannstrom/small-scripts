@@ -3,7 +3,7 @@
 import subprocess
 import requests
 import re
-from datetime import datetime
+import datetime
 from time import sleep
 from flask import Flask
 from flask import request
@@ -40,25 +40,38 @@ sshKeyPath = '/home/john/.ssh/id_rsa'
 
 httpaction = Flask(__name__)
 
+class LogFile():
+    
+    def __init__(self, name):
+        file = open(name,'a+')
+    
+    def write(self, message):
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        line = now + ' ' + command + '\n'
+        file.write(line)
+    
+    def close():
+        file.close()
+
 @httpaction.route(httpPath)
 def index():
     
     def poweron():
         if mac != None:
-           if host != None:
-               command = "{}wakeonlan -i {} {}".format(wakeonlanPath, host,  mac)
-           else:
-               command = "{}wakeonlan {}".format(wakeonlanPath, mac)
-           for i in range(3):
-               p = subprocess.Popen(
+            if host != None:
+                command = "{}wakeonlan -i {} {}".format(wakeonlanPath, host,  mac)
+            else:
+                command = "{}wakeonlan {}".format(wakeonlanPath, mac)
+            for i in range(3):
+                p = subprocess.Popen(
                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    shell=True)
-               stdout, stderr = p.communicate()
-               sleep(0.1)
+                stdout, stderr = p.communicate()
+                sleep(0.1)
             if logging:
                 line = datetime.now().isoformat() + ' ' + command
                 logFile.write(line)
-           return stdout + stderr
+            return stdout + stderr
         else:
             return "Action 'poweron' must have parameter 'mac'!"
 
@@ -120,7 +133,7 @@ def index():
     ep = request.args.get('ep')
     apiKey = request.args.get('apiKey')
     if logging:
-        logFile = open(logFile,'a+')
+        logFile = open(logFileName,'a+')
     if action.lower() == 'poweron':
         result = poweron()
     elif action.lower() == 'poweroff':
