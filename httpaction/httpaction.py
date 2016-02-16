@@ -30,7 +30,7 @@ wakeonlanPath = '/usr/bin/'
 pingPath = '/bin/'
 
 # Number of pings
-pingCount = 5
+pingCount = 3
 
 # Path to the ssh command
 sshPath = '/usr/bin/'
@@ -92,15 +92,19 @@ def index():
             
     def ping():
         if host != None:
-            command = "{}ping -c {} {}".format(pingPath, str(pingCount), host)
-            p = subprocess.Popen(
-                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                shell=True)
-            stdout, stderr = p.communicate()
-            if logging:
-                logFile.write(command)
-            result = re.match('.*0 received.*', str(stdout), re.DOTALL)
-            pingOk = result == None
+            for i in range (pingCount):
+                command = "{}ping -c {} {}".format(pingPath, str(pingCount), host)
+                p = subprocess.Popen(
+                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    shell=True)
+                stdout, stderr = p.communicate()
+                if logging:
+                    logFile.write(command)
+                result = re.match('.*0 received.*', str(stdout), re.DOTALL)
+                pingOk = result == None
+                if pingOk:
+                    break
+                sleep(5)
             if serial != None and ep != None and apiKey != None:
                 # Set the status of a Zipato sensor to the ping status
                 command = "https://my.zipato.com/zipato-web/remoting/attribute/set?serial={}&ep={}&apiKey={}&state={}"
