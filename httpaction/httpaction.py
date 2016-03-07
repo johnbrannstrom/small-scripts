@@ -124,7 +124,23 @@ def index():
                     return '0'
         else:
             return "Action 'ping' must have parameter 'host'!"
-            
+
+    def snmpget():
+        if host != None and oid != None:
+            command = "snmpget -v1 -cpublic {} {}"
+            command = command.format(snmpPath, host, oid)
+            p = subprocess.Popen(
+                   command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                   shell=True)
+            stdout, stderr = p.communicate()
+            if logging:
+                logFile.write(command)
+            return stdout + stderr
+        elif oid == None:
+            return "Action 'snmpget' must have parameter 'oid'!"
+        elif host == None:
+            return "Action 'snmpget' must have parameter 'host'!"
+
     action = request.args.get('action')
     mac = request.args.get('mac')
     user = request.args.get('user')
@@ -132,12 +148,15 @@ def index():
     serial = request.args.get('serial')
     ep = request.args.get('ep')
     apiKey = request.args.get('apiKey')
+    oid = request.args.get('oid')
     if logging:
         logFile = LogFile(logFileName)
     if action.lower() == 'poweron':
         result = poweron()
     elif action.lower() == 'poweroff':
         result = poweroff()
+    elif action.lower() == 'snmpget':
+        result = snmpget()
     elif action.lower() == 'ping':
         result = ping()
     else:
