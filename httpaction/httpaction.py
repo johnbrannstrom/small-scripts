@@ -15,7 +15,7 @@ tcpPort = 5000
 httpPath = '/'
 
 # Sets if debug mode should be used
-debug = True
+debug = False
 
 # Set if logging should be used
 logging = True
@@ -147,4 +147,4 @@ def index():
     return result
     
 if __name__ == '__main__':
-    httpaction.run(debug=debug, host='0.0.0.0', port=tcpPort)
+    httpaction.run(debug=debug, host='0.0.0.0', port=tcpPort, threaded=True)
