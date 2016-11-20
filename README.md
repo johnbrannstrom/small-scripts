@@ -1,7 +1,7 @@
 # small-scripts
 A connection of small but usefull scripts for various uses.
 
-# Bash oneliners
+## 1. Bash oneliners
 
-# Regex replace row in file
+#### 1.1 Regex replace row in file
 sed -i 's/\<regex that matches row>/<string to replace matched row with>/' /etc/ssh/sshd_config
