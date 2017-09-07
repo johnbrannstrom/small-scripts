@@ -5,8 +5,14 @@ A connection of small but usefull scripts for various uses.
 
 #### 1.1 Regex replace row in file
 ```bash
-sed -i 's/\<regex that matches row>/<string to replace matched row with>/' </file/to/replace/row/in>
+sed -i 's/\<regex that matches row>/<string to replace matched row with>/' </file/to/replace/in>
 ```
+#### 1.2 Replace all accurences of string in file
+```bash
+sed -i 's/<string to replace>/<string to insert>/g' </file/to/replace/in>
+```
+
+
 
 ## 2. Docker
 
