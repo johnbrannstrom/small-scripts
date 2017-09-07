@@ -7,7 +7,7 @@ A connection of small but usefull scripts for various uses.
 ```bash
 sed -i 's/\<regex that matches row>/<string to replace matched row with>/' </file/to/replace/in>
 ```
-#### 1.2 Replace all accurences of string in file
+#### 1.2 Replace all occurences of string in file
 ```bash
 sed -i 's/<string to replace>/<string to insert>/g' </file/to/replace/in>
 ```
