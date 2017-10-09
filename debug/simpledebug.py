@@ -11,7 +11,10 @@ This module prints debug messages to screen.
 
 
 class SimpleDebug:
-    """Helper class for debug printing. """
+    """
+    Helper class for debug printing.
+
+    """
 
     DEBUG_LEVEL = 0
     """(*int*) Current debug level."""
@@ -24,8 +27,8 @@ class SimpleDebug:
     """(*dict*) Debug level color."""
 
     # noinspection PyShadowingBuiltins
-    @staticmethod
-    def debug_print(level, message, module=None, class_=None, function=None):
+    def debug_print(self, level, message, module=None, class_=None,
+                    function=None):
         """
         Print debug message to screen.
 
@@ -36,7 +39,7 @@ class SimpleDebug:
         :param str function: Function this debug printout is used in.
 
         """
-        if SimpleDebug.DEBUG_LEVEL >= level:
+        if self.DEBUG_LEVEL >= level:
             start = SimpleDebug.__LEVEL_COLOR[level]
             end = "\033[0m"
             print()
