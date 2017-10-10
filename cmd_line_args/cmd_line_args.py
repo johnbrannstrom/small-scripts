@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-
 """
 .. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
 
@@ -13,6 +12,12 @@ This is a template for writing a script that accepts command line arguments.
 
 # Built in modules
 import argparse
+
+# Third party modules
+# TODO import modules here
+
+# Local modules
+# TODO import modules here
 
 
 class Main():
