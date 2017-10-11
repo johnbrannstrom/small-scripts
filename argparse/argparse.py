@@ -20,7 +20,7 @@ import argparse
 # TODO import modules here
 
 
-class Main():
+class Main:
     """Contains the script"""
 
     @staticmethod
