@@ -14,19 +14,43 @@ This modules is a template flask web server.
 import argparse
 
 # Third party modules
-from flask import Flask
-from flask import render_template
+from flask import Flask, render_template, request
 
 
 class RequestHandler:
     """Flask web server."""
+
+    @staticmethod
+    def _get_request_arguments():
+        """
+        Parse request arguments
+
+        :rtype:  json
+        :return: Arguments.
+
+        """
+        args = {}
+        if request.method == 'PUT' or request.method == 'POST':
+            if len(request.form) > 0:
+                for key in request.form.keys():
+                    args[key] = request.form.get(key)
+            else:
+                args = request.get_json()
+        else:
+            for key in request.args.keys():
+                args[key] = request.args.getlist(key)
+        return args
 
     def handle_request(self):
         """
         Handle a HTTP request.
 
         """
-        return render_template('index.html')
+        args = RequestHandler._get_request_arguments()
+        if request.path == '/':
+            return render_template('index.html')
+        elif request.path == '/post.html':
+            return render_template('post.html')
 
 
 class Main:
@@ -59,7 +83,7 @@ class Main:
             flask_debug = True
         web_server.run(debug=flask_debug,
                        host='0.0.0.0',
-                       port=80,
+                       port=5000,
                        processes=3)
 
 
@@ -70,6 +94,7 @@ web_server = Flask(__name__,
 
 
 @web_server.route('/')
+@web_server.route('/post.html', methods=['POST'])
 def index():
     """
     Handle incoming HTTP requests.
