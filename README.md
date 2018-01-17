@@ -76,6 +76,9 @@ git stash apply
 #### 3.14 Set remote tracking branch
 git branch -u origin/<remote_branch> <local_branch>
 
+#### 3.15 Update list of remote branches
+git remote update origin --prune
+
 ## 4. Git Postgres
 
 #### 4.1 Connect to database
