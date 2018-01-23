@@ -92,3 +92,14 @@ psql -U <user> -l
 
 #### 4.4 Print table info
 \d+ <table_name>
+
+## 5. Descriptive movie links
+
+#### 5.1 Reload
+https://www.youtube.com/watch?v=jk3Z-MVoUg4&version=3&start=17
+
+#### 5.2 Die
+https://www.youtube.com/watch?v=rmZOWW70ycQ&start=3
+
+#### 5.3 Lot's of shooting
+https://www.youtube.com/watch?v=wgzxSr6l9Y4&start=66
