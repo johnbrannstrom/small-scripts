@@ -1,3 +1,6 @@
+# Environment variables
+export GIT_EDITOR=vim
+
 # Aliases
 alias ls='ls -lah'
 
