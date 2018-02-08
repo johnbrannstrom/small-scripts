@@ -1,3 +1,7 @@
+# Start ssh-agent and add required keys
+eval $(ssh-agent -s)
+ssh-add ~/.ssh/qamcom_rsa
+
 # Environment variables
 export GIT_EDITOR=vim
 
