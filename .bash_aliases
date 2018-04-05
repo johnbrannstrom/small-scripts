@@ -8,11 +8,16 @@ export GIT_EDITOR=vim
 # Aliases
 alias ls='ls -lah'
 
-# Custom prompt with git branch
-parse_git_branch() {
-     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+# Custom prompt with git or mercurial branch
+function parse_hg_git_branch {
+    HG_BRANCH=$(hg branch 2> /dev/null | sed -e "s/\(.*\)/ (\1)/")
+    if [ "$HG_BRANCH" = "" ]; then
+        git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+    else
+        echo "$HG_BRANCH"
+    fi
 }
-export PS1="\u@\h \[\033[32m\]\w\[\033[33m\]\$(parse_git_branch)\[\033[00m\] $ "
+export PS1="\u@\h \[\033[32m\]\w\[\033[33m\]\$(parse_hg_git_branch)\[\033[00m\] $ "
 
 # Add the "docker clear" and "docker images clear" commands
 docker() {
