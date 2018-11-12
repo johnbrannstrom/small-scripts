@@ -39,7 +39,7 @@ class LogFile:
         :param bool date_time: If date and time should be added to message.
 
         """
-        if level >= self._verbosity:
+        if self._verbosity >= level:
             if date_time:
                 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 lines = [now+' '+i for i in lines]
