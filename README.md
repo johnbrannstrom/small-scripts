@@ -31,3 +31,6 @@ https://www.youtube.com/watch?v=rmZOWW70ycQ&start=3
 
 #### 2.3 Lot's of shooting
 https://www.youtube.com/watch?v=wgzxSr6l9Y4&start=66
+
+#### 2.4 Mistake
+https://www.youtube.com/watch?v=eFmuO6xJ36g
