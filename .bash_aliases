@@ -6,7 +6,7 @@ ssh-add ~/.ssh/qamcom_rsa
 export GIT_EDITOR=nano
 
 # Aliases
-alias ls='ls -lah'
+alias ls='ls -lah --color=auto'
 
 # Custom prompt with git or mercurial branch
 function parse_hg_git_branch {
