@@ -37,3 +37,6 @@ https://www.youtube.com/watch?v=eFmuO6xJ36g
 
 #### 2.5 We're screwed
 https://m.youtube.com/watch?v=KyoElzBhbXg
+
+#### 2.6 Disagree
+https://www.youtube.com/watch?v=_uHBFiAnpZs
