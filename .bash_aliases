@@ -1,8 +1,11 @@
+# Aliases
+alias ls='ls -lah --color=auto'
+
 # Environment variables
 export GIT_EDITOR=nano
 
-# Aliases
-alias ls='ls -lah --color=auto'
+# PATH
+PATH=${PATH}:~/bin
 
 # Custom prompt with git or mercurial branch
 function parse_hg_git_branch {
