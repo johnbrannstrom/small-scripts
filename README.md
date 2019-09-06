@@ -43,3 +43,6 @@ https://www.youtube.com/watch?v=_uHBFiAnpZs
 
 #### 2.7 Move desk
 https://www.youtube.com/watch?v=Vsayg_S4pJg&%252=&start=24
+
+#### 2.8 Because we want to
+https://www.youtube.com/watch?v=D_XI_290cfw&start=22
