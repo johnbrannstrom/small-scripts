@@ -49,3 +49,6 @@ https://www.youtube.com/watch?v=D_XI_290cfw&start=22
 
 #### 2.9 Piece of cake
 https://www.youtube.com/watch?v=scmuWX3kHjA&start=2
+
+#### 2.10 Yes got dam it yes
+https://www.youtube.com/watch?v=cMoowJQLJ10&start=34
