@@ -61,3 +61,9 @@ https://www.youtube.com/watch?v=-Bxlolvjyx8
 
 #### 2.13 Negative waves
 https://www.youtube.com/watch?v=aT9Lm4Y886k
+
+#### 2.14 We have liftoff
+https://www.youtube.com/watch?v=lMtWWls4oas&start=157
+
+#### 2.15 Huston we have a problem
+https://www.youtube.com/watch?v=C3J1AO9z0tA&start=80
