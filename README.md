@@ -67,3 +67,6 @@ https://www.youtube.com/watch?v=lMtWWls4oas&start=157
 
 #### 2.15 Huston we have a problem
 https://www.youtube.com/watch?v=C3J1AO9z0tA&start=80
+
+#### 2.16 Wait
+https://www.youtube.com/watch?v=QyFw6yvNiKk&start=246
