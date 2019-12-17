@@ -70,3 +70,6 @@ https://www.youtube.com/watch?v=C3J1AO9z0tA&start=80
 
 #### 2.16 Wait
 https://www.youtube.com/watch?v=QyFw6yvNiKk&start=246
+
+#### 2.17 Yes that's awesome
+https://www.youtube.com/watch?v=PDXLjQBp0D0
