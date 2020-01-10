@@ -6,7 +6,7 @@
 SFTP_BATCH_FILE="sftp_deploy_files"
 
 # Check for destination host
-if [ ${1} == "" ]; then
+if [ "${1}" == "" ]; then
     echo "Error: user@host missing!"
     exit 1
 fi
