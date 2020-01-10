@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Copy files to destination with SFTP
+
 # SFTP batch file with commands
 SFTP_BATCH_FILE="sftp_deploy_files"
 
