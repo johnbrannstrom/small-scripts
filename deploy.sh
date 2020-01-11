@@ -6,7 +6,7 @@
 DST_PATH="/tmp/"
 
 # Current location compared to script location if symbolic link
-SYM_DIR="$(dirname "$(readlink -f "$0")")"
+SYM_DIR=$(dirname "$(readlink -f "$0")")
 
 # Current location compared to script location
 NO_SYM_DIR="$(dirname $0)"
@@ -27,6 +27,6 @@ if [ "${2}" != "" ]; then
 fi
 
 echo "sftp -b ${SFTP_BATCH_FILE} ${USER_HOST}:${DST_PATH}"
-cd ${SYM_DIR} || return
-sftp -b ${SFTP_BATCH_FILE} ${USER_HOST}:${DST_PATH}
-cd ${NO_SYM_DIR} || return
+cd "${SYM_DIR}" || return
+sftp -b ${SFTP_BATCH_FILE} "${USER_HOST}:${DST_PATH}"
+cd "${NO_SYM_DIR}" || return
