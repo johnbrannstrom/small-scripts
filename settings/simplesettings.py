@@ -12,29 +12,25 @@ This module contains settings.
 import yaml
 import os
 import re
-from flask import render_template
 from shutil import copyfile
 
 
 class Settings:
     """Settings container."""
 
-    __CONFIG_PATH = '/mnt/host/etc/'
+    __CONFIG_PATH = '/etc/'
     """(*str*) Config file path."""
 
-    __CONFIG_FILE_NAME = 'zipatoserver.conf'
+    __CONFIG_FILE_NAME = 'project.conf'
     """(*str*) Config file name."""
 
-    __TEMPLATE_CONFIG_FILE_NAME = 'zipatoserver_template.conf'
+    __TEMPLATE_CONFIG_FILE_NAME = 'project_template.conf'
     """(*str*) Template config file name."""
 
-    __PATH_WITH_SLASH_PARAMETERS = [
-        'WEB_API_PATH', 'WEB_GUI_PATH', 'WAKEONLAN_PATH', 'PING_PATH',
-        'SSH_PATH']
+    __PATH_WITH_SLASH_PARAMETERS = []
     """(*list*) Parameters in this list with always end with a slash."""
 
-    __PATH_WITHOUT_SLASH_PARAMETERS = [
-        'MESSAGE_LOG', 'ERROR_LOG', 'SSH_KEY_FILE']
+    __PATH_WITHOUT_SLASH_PARAMETERS = []
     """(*list*) Parameters in this list will never end with a slash."""
 
     __CONFIG_FILE = None
@@ -73,78 +69,10 @@ class Settings:
 
         """
         with open(Settings.__CONFIG_FILE, 'r') as f:
-            constants = yaml.load(f)
+            constants = yaml.load(f, Loader=yaml.FullLoader)
         for constant, value in constants.items():
             setattr(
                 Settings, constant, Settings._format_value(constant, value))
-
-    @staticmethod
-    def render_settings_html():
-        """
-        Render web GUI for handling settings.
-
-        """
-        # Load constants from disk
-        with open(Settings.__CONFIG_FILE, 'r') as f:
-            constants = yaml.load(f)
-        for constant, value in constants.items():
-            constants[constant] = Settings._format_value(constant, value)
-        # Load comments from disk
-        comments = {}
-        file = open(Settings.__CONFIG_FILE, encoding='utf-8')
-        lines = file.readlines()
-        for i in range(len(lines)-1, -1, -1):
-            # Test/set more comments
-            if re.match('\A#.*', lines[i]):
-                comments[constant] = (
-                    lines[i][1:].strip() + ' ' + comments[constant])
-            for key in constants.keys():
-                # Test/set new constant
-                regex = "\A{}:.*".format(key)
-                if re.match(regex, lines[i]):
-                    constant = key
-                    comments[constant] = ''
-        return render_template(
-            'settings.html', constants=constants, comments=comments,
-            save_settings_path=(Settings.WEB_API_PATH + 'save_settings'),
-            delete_param_path=(Settings.WEB_API_PATH + 'delete_param_value'),
-            add_param_path=(Settings.WEB_API_PATH + 'add_param_value'))
-
-    @staticmethod
-    def delete_param_value_from_file(param, value):
-        """
-        Remove a value from a parameter in the settings file.
-
-        :param str value: Value to delete.
-        :param str param: Parameter to delete value from.
-        :rtype: boolean
-        :returns: If the value was deleted from the parameter.
-
-        """
-        with open(Settings.__CONFIG_FILE, 'r') as f:
-            settings_json = yaml.load(f)
-        status = False
-        if len(settings_json[param]) > 1:
-            del settings_json[param][value]
-            status = True
-        Settings.write_settings_to_file(settings_json)
-        return status
-
-    @staticmethod
-    def add_param_value_to_file(param, value):
-        """
-        Add value to a parameter in the settings file.
-
-        :param str param: Parameter to add value to.
-        :param str value: Value to add.
-
-        """
-        with open(Settings.__CONFIG_FILE, 'r') as f:
-            settings_json = yaml.load(f)
-        blank_value = list(settings_json[param].values())[0]
-        blank_value = {key: '' for key, value in blank_value.items()}
-        settings_json[param][value] = blank_value
-        Settings.write_settings_to_file(settings_json)
 
     @staticmethod
     def write_settings_to_file(settings_json):
