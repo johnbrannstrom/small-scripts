@@ -38,13 +38,6 @@ PIP3_PACKAGES=(\
 "pika==1.1.0"
 )
 
-# List of files to copy
-# Each list item contains source and destination for file copy
-COPY_FILES=(
-"src/file1.py /usr/local/bin/project/file1.py"
-"src/file2.html /srv/project/file2.html"
-)
-
 # Current location compared to script location
 DIR=$(dirname "$(readlink -f "$0")")
 
@@ -78,14 +71,6 @@ done
 for PACKAGE in "${PIP3_PACKAGES[@]}"
 do
   run_echo "pip3 install ${PACKAGE}"
-done
-
-# Copy project files
-for FILE in "${COPY_FILES[@]}"
-do
-  run_echo "cp ${FILE}"
-  run_echo "chown ${PROJECT}.${PROJECT} ${FILE}"
-  run_echo "chmod 755 ${FILE}"
 done
 
 # Create project user
