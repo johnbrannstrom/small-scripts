@@ -76,3 +76,7 @@ https://www.youtube.com/watch?v=PDXLjQBp0D0
 
 ### 2.18 Nooooo
 https://www.youtube.com/watch?v=wcz4u3Lv9ko
+
+### 2.19 Fix it
+https://www.youtube.com/watch?v=QCniMXdbO6c
+
