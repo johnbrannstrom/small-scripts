@@ -74,9 +74,9 @@ https://www.youtube.com/watch?v=QyFw6yvNiKk&start=246
 #### 2.17 Yes that's awesome
 https://www.youtube.com/watch?v=PDXLjQBp0D0
 
-### 2.18 Nooooo
+#### 2.18 Nooooo
 https://www.youtube.com/watch?v=wcz4u3Lv9ko
 
-### 2.19 Fix it
+#### 2.19 Fix it
 https://www.youtube.com/watch?v=QCniMXdbO6c
 
