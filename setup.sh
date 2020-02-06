@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Setup Linux environment for project
+# If first command line argument is set to "no-install", no packages will be
+# installed
 
 # Name of project
 PROJECT="legcocar"
@@ -61,17 +63,21 @@ run_echo "mkdir -p /var/log/supervisor"
 # Set bash_aliases for root
 sed -i "/alias ls='ls -lah --color=auto'/d" /root/.bashrc
 run_echo "echo \"alias ls='ls -lah --color=auto'\" >> /root/.bashrc"
-run_echo "apt-get update"
-for PACKAGE in "${APT_PACKAGES[@]}"
-do
-  run_echo "apt-get -y install ${PACKAGE}"
-done
 
-# Install packages with pip3
-for PACKAGE in "${PIP3_PACKAGES[@]}"
-do
-  run_echo "pip3 install ${PACKAGE}"
-done
+if [ "${1}" != "no-install" ]; then
+  # Install packages with apt
+  run_echo "apt-get update"
+  for PACKAGE in "${APT_PACKAGES[@]}"
+  do
+    run_echo "apt-get -y install ${PACKAGE}"
+  done
+
+  # Install packages with pip3
+  for PACKAGE in "${PIP3_PACKAGES[@]}"
+  do
+    run_echo "pip3 install ${PACKAGE}"
+  done
+fi
 
 # Create project user
 run_echo "useradd -m ${PROJECT}"
