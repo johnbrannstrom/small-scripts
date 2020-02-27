@@ -85,3 +85,6 @@ https://www.youtube.com/watch?v=QCniMXdbO6c
 
 #### 2.21 Screw you guys I'm going home
 https://www.youtube.com/watch?v=MTc3zcnIZOw
+
+#### 2.22 Splendid well done!
+https://www.youtube.com/watch?v=JexO-N39Nzg&start=96
