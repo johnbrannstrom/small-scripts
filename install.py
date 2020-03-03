@@ -8,7 +8,7 @@ Install
 
 This is a program installer module. It can be used to install a program on a
 Linux system and prepare the Linux environment for this program to run
-properly.
+properly. This script also requires a Linux environment.
 
 """
 
@@ -26,6 +26,10 @@ run_cmd_vars = dict()
 # Name of project
 PROJECT = 'legcocar'
 run_cmd_vars['PROJECT'] = PROJECT
+
+
+# Install script location
+run_cmd_vars['DIR'] = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
 # noinspection PyShadowingNames,PyTypeChecker,PyUnboundLocalVariable
@@ -47,12 +51,9 @@ def run_cmd(command: str, mode: str = 'status'):
         if var in command:
             command = command.replace(var, val)
 
-    # Print command if we are in regular mode
+    # Handle regular mode
     if mode.lower() == 'regular':
         print(command, flush=True)
-
-    # Run command
-    if mode == 'regular':
         with subprocess.Popen(command,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
@@ -61,22 +62,13 @@ def run_cmd(command: str, mode: str = 'status'):
                               universal_newlines=True) as p:
             for line in p.stdout:
                 print(line, end='', flush=True)
-        return None
+            for line in p.stderr:
+                print(line, end='', flush=True)
 
-    else:
+    # Handle status mode
+    elif mode == 'status':
         result = subprocess.run(command, shell=True,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Handle regular mode
-    if mode.lower() == 'regular':
-        stdout = result.stdout.decode('utf-8')
-        print(stdout, flush=True)
-        if result.returncode > 0:
-            stderr = result.stderr.decode('utf-8')
-            print(stderr, flush=True)
-
-    # Handle status mode and quiet mode
-    elif mode == 'status':
         if result.returncode == 0:
             status = '\033[1;32m OK  \033[0m'
             stderr = ''
@@ -91,13 +83,20 @@ def run_cmd(command: str, mode: str = 'status'):
                                              stderr=stderr)
         print(status_string, flush=True)
 
+    # Handle quiet mode
+    else:
+        subprocess.run(command, shell=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 
 # Parse command line arguments
 # noinspection PyShadowingNames
 def parse_command_line_options():
     """
     Parse options from the command line.
+    
     :rtype: Namespace
+
     """
     quick_help = (
         'Supplying this flag will skip as many time consuming steps as possibl'
@@ -122,7 +121,7 @@ remote = args.remote
 if remote != "":
     run_cmd_vars['REMOTE'] = remote
     run_cmd("ssh {REMOTE} 'mkdir -p /tmp/{PROJECT}'", mode='quiet')
-    run_cmd("echo 'put -r *' > /tmp/sftp_batchfile", mode='quiet')
+    run_cmd("echo 'put -r {DIR}/*' > /tmp/sftp_batchfile", mode='quiet')
     run_cmd("sftp -b /tmp/sftp_batchfile {REMOTE}:/tmp/{PROJECT}",
             mode='regular')
     run_cmd("rm /tmp/sftp_batchfile", mode='quiet')
@@ -153,9 +152,6 @@ APT_PACKAGE_LIST = [
 PIP3_PACKAGE_LIST = [
     'bricknil==0.9.3', 'flask==1.1.1', 'pika==1.1.0', 'bricknil-bleak==0.3.1',
     'coloredlogs==10.0', 'verboselogs==1.7']
-
-# Install script location
-run_cmd_vars['DIR'] = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 # Create supervisor log dir
 run_cmd('mkdir -p /var/log/supervisor')
@@ -200,8 +196,7 @@ run_cmd('chown -R {PROJECT}:{PROJECT} /srv/{PROJECT}')
 run_cmd('chmod 755 /srv/{PROJECT}')
 
 # Restart apache2 for settings to take affect
-if not quick:
-    run_cmd('service apache2 restart')
+run_cmd('service apache2 restart')
 
 # Create rabbitMQ .erlang.cookie
 if not quick:
