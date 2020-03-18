@@ -1,5 +1,11 @@
+# Delete file by inode number
+function delete_by_inode {
+    find . -inum {1}  -exec rm -ir {} \;
+}
+
 # Aliases
 alias ls='ls -lah --color=auto'
+alias rmi='delete_by_inode ${1}'
 
 # Environment variables
 export GIT_EDITOR=nano
