@@ -29,7 +29,7 @@ docker() {
     fi
 }
 
-# Add the "rmi" command to delete a file by inode number
+# Add the "rmi" command to delete a file or directory by inode number
 rmi () {
-    find . -inum ${1}  -exec rm -ir {} \;
+    find / -inum ${1}  -exec rm -ir {} \;
 }
