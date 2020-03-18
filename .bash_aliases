@@ -1,11 +1,5 @@
-# Delete file by inode number
-function delete_by_inode {
-    find . -inum {1}  -exec rm -ir {} \;
-}
-
 # Aliases
 alias ls='ls -lah --color=auto'
-alias rmi='delete_by_inode ${1}'
 
 # Environment variables
 export GIT_EDITOR=nano
@@ -33,4 +27,10 @@ docker() {
     else
         command docker "$@"
     fi
+}
+
+# Add the "rmi" command to delete a file by inode number
+rmi () {
+    find . -inum ${1}  -exec rm -ir {} \;
+    echo "find . -inum ${1}  -exec rm -ir {} \;"
 }
