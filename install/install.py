@@ -27,9 +27,11 @@ run_cmd_vars = dict()
 PROJECT = 'legcocar'
 run_cmd_vars['PROJECT'] = PROJECT
 
-
 # Install script location
 run_cmd_vars['DIR'] = os.path.dirname(os.path.realpath(sys.argv[0]))
+
+# Install script name
+run_cmd_vars['SCRIPT'] = os.path.basename(__file__)
 
 
 # noinspection PyShadowingNames,PyTypeChecker,PyUnboundLocalVariable
@@ -38,10 +40,12 @@ def run_cmd(command: str, mode: str = 'status'):
     Run a command and print status.
 
     :param command: Command to run.
-    :param mode:    Choises are: "status", "regular" and "quiet":
+    :param mode:    Choices are: "status", "regular" and "quiet":
                     "status":  Print command and status.
-                    "regular": Print command, stdout and stderr to screen, just
-                               as usual.
+                    "regular": Print command, stdout and stderr to screen (just
+                               as usual).
+                    "verbose": Print status, command, stdout and stderr to
+                               screen.
                     "quiet":   Don't print anything.
 
     """
@@ -51,9 +55,10 @@ def run_cmd(command: str, mode: str = 'status'):
         if var in command:
             command = command.replace(var, val)
 
-    # Handle regular mode
-    if mode.lower() == 'regular':
+    # Handle regular and verbose mode
+    if mode.lower() == 'regular' or mode.lower() == 'verbose':
         print(command, flush=True)
+        error = False
         with subprocess.Popen(command,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
@@ -63,7 +68,20 @@ def run_cmd(command: str, mode: str = 'status'):
             for line in p.stdout:
                 print(line, end='', flush=True)
             for line in p.stderr:
+                error = True
                 print(line, end='', flush=True)
+        # Print status for verbose mode
+        if mode.lower() == 'verbose':
+            if error:
+                status = '\033[1;91mERROR\033[0m'
+            else:
+                status = '\033[1;32m OK  \033[0m'
+
+            # Print status
+            status_string = "[ {status} ] {command}"
+            status_string = status_string.format(status=status,
+                                                 command=command)
+            print(status_string, flush=True)
 
     # Handle status mode
     elif mode == 'status':
@@ -72,7 +90,7 @@ def run_cmd(command: str, mode: str = 'status'):
         if result.returncode == 0:
             status = '\033[1;32m OK  \033[0m'
             stderr = ''
-        elif result.returncode > 0:
+        else:
             status = '\033[1;91mERROR\033[0m'
             stderr = '\n' + result.stderr.decode('utf-8')
 
@@ -94,19 +112,22 @@ def run_cmd(command: str, mode: str = 'status'):
 def parse_command_line_options():
     """
     Parse options from the command line.
-    
+
     :rtype: Namespace
 
     """
     quick_help = (
         'Supplying this flag will skip as many time consuming steps as possibl'
-        'e to speed up the installation process. This is used for delevopment '
+        'e to speed up the installation process. This is used for development '
         'purposes only.')
+    verbose_help = 'Supplying this flag will enable extra verbose output.'
     remote_help = 'Install program on remote user@host.'
     description = 'Installer script for the {PROJECT}.'.format(PROJECT=PROJECT)
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-q', '--quick',  default=False, action='store_true',
+    parser.add_argument('-q', '--quick', default=False, action='store_true',
                         help=quick_help, required=False)
+    parser.add_argument('-v', '--verbose', default=False, action='store_true',
+                        help=verbose_help, required=False)
     parser.add_argument('-r', '--remote', type=str, default="",
                         help=remote_help, required=False)
     args = parser.parse_args()
@@ -127,9 +148,9 @@ if remote != "":
     run_cmd("rm /tmp/sftp_batchfile", mode='quiet')
 
     # Run install script on remote side
-    command = "ssh {REMOTE} '/tmp/{PROJECT}/install.py'"
+    command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT}'"
     if quick:
-        command = "ssh {REMOTE} '/tmp/{PROJECT}/install.py -q'"
+        command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT} -q'"
     run_cmd(command, mode='regular')
     sys.exit(0)
 
