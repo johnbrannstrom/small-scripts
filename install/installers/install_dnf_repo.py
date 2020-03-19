@@ -4,7 +4,7 @@
 .. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
 
 Install Dnf repository
-*******
+**********************
 
 This script will configure a CentOS 8 server as a Dnf repository mirror.
 
