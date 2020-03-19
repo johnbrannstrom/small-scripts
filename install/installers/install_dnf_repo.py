@@ -34,7 +34,7 @@ run_cmd_vars['SCRIPT'] = os.path.basename(__file__)
 
 # noinspection PyShadowingNames
 def write_file(file_name: str, content: str, mode: str = 'status',
-               file_mode: str = 'w'):
+               show_ok: bool = False, file_mode: str = 'w'):
     """
     Write content to file.
 
@@ -46,7 +46,8 @@ def write_file(file_name: str, content: str, mode: str = 'status',
                                  (just as usual).
                       "verbose": Print status, command, stdout and stderr to
                                  screen.
-                      "quiet":   Don't print anything.
+                      "quiet":   Only print errors.
+    :param show_ok:   If ok status should be shown.
     :param file_mode: Setting this to "w" till overwrite the file.
                       Setting this to "a" till append to the file.
 
@@ -85,11 +86,11 @@ def write_file(file_name: str, content: str, mode: str = 'status',
         print(error, flush=True)
 
     # Print regular mode
-    elif mode == 'regular':
+    elif mode == 'regular' and (error != '' or show_ok):
         print(status_string, flush=True)
 
     # Print verbose and status mode
-    elif mode == 'verbose' or mode == 'status':
+    elif (mode == 'verbose' or mode == 'status') and (error != '' or show_ok):
         status = '[ \033[1;32m OK  \033[0m ] '
         if error != '':
             status = '[ \033[1;91mERROR\033[0m ] '
@@ -102,7 +103,7 @@ def write_file(file_name: str, content: str, mode: str = 'status',
 
 
 # noinspection PyShadowingNames,PyTypeChecker,PyUnboundLocalVariable
-def run_cmd(command: str, mode: str = 'status'):
+def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
     """
     Run a command and print status.
 
@@ -113,7 +114,8 @@ def run_cmd(command: str, mode: str = 'status'):
                                as usual).
                     "verbose": Print status, command, stdout and stderr to
                                screen.
-                    "quiet":   Don't print anything.
+                    "quiet":   Only print errors.
+    :param show_ok: If ok status should be shown.
 
     """
     # Insert values from run_cmd_vars if they exist
@@ -162,11 +164,12 @@ def run_cmd(command: str, mode: str = 'status'):
             stderr = '\n' + result.stderr.decode('utf-8')
 
         # Print status
-        status_string = "[ {status} ] {command}{stderr}"
-        status_string = status_string.format(status=status,
-                                             command=command,
-                                             stderr=stderr)
-        print(status_string, flush=True)
+        if stderr != '' or show_ok:
+            status_string = "[ {status} ] {command}{stderr}"
+            status_string = status_string.format(status=status,
+                                                 command=command,
+                                                 stderr=stderr)
+            print(status_string, flush=True)
 
     # Handle quiet mode
     else:
@@ -192,16 +195,19 @@ def parse_command_line_options():
     :rtype: Namespace
 
     """
-    quick_help = (
+    skip_help = (
         'Supplying this flag will skip as many time consuming steps as possibl'
         'e to speed up the installation process. This is used for development '
         'purposes only.')
-    verbose_help = 'Supplying this flag will enable extra verbose output.'
+    show_ok_help = 'Supplying this flag will also actions with show ok status.'
+    verbose_help = 'Supplying this flag will enable all possible output.'
     remote_help = 'Install program on remote user@host.'
     description = 'Installer script for the {PROJECT}.'.format(PROJECT=PROJECT)
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-q', '--quick', default=False, action='store_true',
-                        help=quick_help, required=False)
+    parser.add_argument('-s', '--skip', default=False, action='store_true',
+                        help=skip_help, required=False)
+    parser.add_argument('-o', '--show-ok', default=False, action='store_true',
+                        help=show_ok_help, required=False)
     parser.add_argument('-v', '--verbose', default=False, action='store_true',
                         help=verbose_help, required=False)
     parser.add_argument('-r', '--remote', type=str, default="",
@@ -211,19 +217,17 @@ def parse_command_line_options():
 
 
 args = parse_command_line_options()
-quick = args.quick
+skip = args.skip
+show_ok = args.show_ok
 remote = args.remote
 verbose = args.verbose
 
-# For quick mode we change the default "mode" to "quiet".
-if quick:
-    run_cmd.__defaults__ = (None, 'quiet')
-    write_file.__defaults__ = (None, None, 'quiet', 'w')
-
-# For verbose mode we change the default "mode" to "verbose".
+# Set default values according to command line options
+mode = 'status'
 if verbose:
-    run_cmd.__defaults__ = (None, 'verbose')
-    write_file.__defaults__ = (None, None, 'verbose', 'w')
+    mode = 'verbose'
+run_cmd.__defaults__ = (None, mode, show_ok)
+write_file.__defaults__ = (None, None, mode, show_ok, 'w')
 
 # Copy program and installer script to remote location and run it there instead
 if remote != "":
@@ -237,8 +241,10 @@ if remote != "":
     # Run install script on remote side
     opts = ''
     command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT}{opts}'"
-    if quick:
-        opts += ' -q'
+    if skip:
+        opts += ' -s'
+    if show_ok:
+        opts += ' -o'
     if verbose:
         opts += ' -v'
     command = command.replace('{opts}', opts)
@@ -254,13 +260,13 @@ DNF_PACKAGE_LIST = ['httpd', 'python3-pip', 'createrepo', 'yum-utils']
 PIP3_PACKAGE_LIST = []
 
 # Install packages with dnf
-if not quick:
+if not skip:
     run_cmd('dnf makecache')
     for package in DNF_PACKAGE_LIST:
         run_cmd('dnf -y install {package}'.format(package=package))
 
 # Install packages with pip3
-if not quick:
+if not skip:
     for package in PIP3_PACKAGE_LIST:
         run_cmd('pip3 install {package}'.format(package=package))
 
@@ -269,7 +275,7 @@ run_cmd('mkdir --parents /var/www/repos/centos/8/x86_64/os')
 run_cmd('chmod -R 755 /var/www/repos')
 
 # Copy from official repository
-if not quick:
+if not skip:
     run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ --repo=BaseOS --download-metadata')
     run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ --repo=AppStream --download-metadata')
     run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ --repo=extras --download-metadata')
