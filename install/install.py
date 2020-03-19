@@ -34,6 +34,75 @@ run_cmd_vars['DIR'] = os.path.dirname(os.path.realpath(sys.argv[0]))
 run_cmd_vars['SCRIPT'] = os.path.basename(__file__)
 
 
+# noinspection PyShadowingNames
+def write_file(file_name: str, content: str, mode: str = 'status',
+               file_mode: str = 'w'):
+    """
+    Write content to file.
+
+    :param file_name: Full path and name of file to write content to.
+    :param content:   Content to write to file.
+    :param mode:      Choices are: "status", "regular" and "quiet":
+                      "status":  Print command and status.
+                      "regular": Print command, stdout and stderr to screen
+                                 (just as usual).
+                      "verbose": Print status, command, stdout and stderr to
+                                 screen.
+                      "quiet":   Don't print anything.
+    :param file_mode: Setting this to "w" till overwrite the file.
+                      Setting this to "a" till append to the file.
+
+    """
+    # Insert values from run_cmd_vars in "file_name" and "content"
+    # (if they exist)
+    for key, val in run_cmd_vars.items():
+        var = '{' + key + '}'
+        if var in file_name:
+            file_name = file_name.replace(var, val)
+        if var in content:
+            content = content.replace(var, val)
+
+    # Write to file
+    error = ''
+    status_string = 'Wrote content to "{file_name}"'
+    if file_mode == 'a':
+        status_string = 'Appended content to "{file_name}"'
+    status_string = status_string.format(file_name=file_name)
+    try:
+        file = open(file_name, file_mode)
+        file.write(content)
+        file.close()
+    except BaseException as e:
+        status_string = 'Error writing content to "{file_name}"'
+        if file_mode == 'a':
+            status_string = 'Error appending content to "{file_name}"'
+        status_string = status_string.format(file_name=file_name)
+        error = str(e)
+
+    # Print quiet mode
+    if mode == 'quiet' and error != '':
+        status = '[ \033[1;91mERROR\033[0m ] '
+        status_string = status + status_string
+        print(status_string, flush=True)
+        print(error, flush=True)
+
+    # Print regular mode
+    elif mode == 'regular':
+        print(status_string, flush=True)
+
+    # Print verbose and status mode
+    elif mode == 'verbose' or mode == 'status':
+        status = '[ \033[1;32m OK  \033[0m ] '
+        if error != '':
+            status = '[ \033[1;91mERROR\033[0m ] '
+        status_string = status + status_string
+        print(status_string, flush=True)
+        if error != '':
+            print(error, flush=True)
+        elif mode == 'verbose':
+            print(content, flush=True)
+
+
 # noinspection PyShadowingNames,PyTypeChecker,PyUnboundLocalVariable
 def run_cmd(command: str, mode: str = 'status'):
     """
@@ -85,8 +154,8 @@ def run_cmd(command: str, mode: str = 'status'):
 
     # Handle status mode
     elif mode == 'status':
-        result = subprocess.run(command, shell=True,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
         if result.returncode == 0:
             status = '\033[1;32m OK  \033[0m'
             stderr = ''
@@ -103,8 +172,17 @@ def run_cmd(command: str, mode: str = 'status'):
 
     # Handle quiet mode
     else:
-        subprocess.run(command, shell=True,
-                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        # Print status if we had an error
+        if result.returncode > 0:
+            status = '\033[1;91mERROR\033[0m'
+            stderr = '\n' + result.stderr.decode('utf-8')
+            status_string = "[ {status} ] {command}{stderr}"
+            status_string = status_string.format(status=status,
+                                                 command=command,
+                                                 stderr=stderr)
+            print(status_string, flush=True)
 
 
 # Parse command line arguments
@@ -137,6 +215,17 @@ def parse_command_line_options():
 args = parse_command_line_options()
 quick = args.quick
 remote = args.remote
+verbose = args.verbose
+
+# For quick mode we change the default "mode" to "quiet".
+if quick:
+    run_cmd.__defaults__ = (None, 'quiet')
+    write_file.__defaults__ = (None, None, 'quiet', 'w')
+
+# For verbose mode we change the default "mode" to "verbose".
+if verbose:
+    run_cmd.__defaults__ = (None, 'verbose')
+    write_file.__defaults__ = (None, None, 'verbose', 'w')
 
 # Copy program and installer script to remote location and run it there instead
 if remote != "":
@@ -148,9 +237,13 @@ if remote != "":
     run_cmd("rm /tmp/sftp_batchfile", mode='quiet')
 
     # Run install script on remote side
-    command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT}'"
+    opts = ''
+    command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT}{opts}'"
     if quick:
-        command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT} -q'"
+        opts += ' -q'
+    if verbose:
+        opts += ' -v'
+    command = command.replace('{opts}', opts)
     run_cmd(command, mode='regular')
     sys.exit(0)
 
