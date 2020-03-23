@@ -15,6 +15,7 @@ import subprocess
 import argparse
 import os
 import sys
+import re
 
 
 # Adding variables and values in this dictionary will enable them to be
@@ -22,7 +23,7 @@ import sys
 run_cmd_vars = dict()
 
 # Name of project
-PROJECT = 'dnf'
+PROJECT = 'dnf_repo'
 run_cmd_vars['PROJECT'] = PROJECT
 
 # Install script location
@@ -30,6 +31,115 @@ run_cmd_vars['DIR'] = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 # Install script name
 run_cmd_vars['SCRIPT'] = os.path.basename(__file__)
+
+
+# noinspection PyShadowingNames,PyUnboundLocalVariable
+def edit_line(file_name: str, regex: str, replace: str, mode: str = 'status',
+              show_ok: bool = False):
+    """
+    Edit line in file matching a regular expression.
+
+    :param file_name: Full path and name of file to write content to.
+    :param regex:     Regular expression for matching line to edit.
+    :param replace:   Replace line with this. Matching groups from regex are
+                      matched with {1}...{10}
+    :param mode:      Choices are: "status", "regular" and "quiet":
+                      "status":  Print command and status.
+                      "regular": Print command, stdout and stderr to screen
+                                 (just as usual).
+                      "verbose": Print status, command, stdout and stderr to
+                                 screen.
+                      "quiet":   Only print errors.
+    :param show_ok:   If ok status should be shown.
+
+    """
+    error = ''
+    # Insert values from run_cmd_vars in "regex" and "replace"
+    # (if they exist)
+    for key, val in run_cmd_vars.items():
+        var = '{' + key + '}'
+        if var in regex:
+            regex = regex.replace(var, val)
+        if var in replace:
+            replace = replace.replace(var, val)
+
+    # Set OK status message
+    status_string = 'Replaced "{old}" with "{replace}" in file "{file_name}"'
+    status_string = status_string.replace('{replace}', replace)
+    status_string = status_string.replace('{file_name}', file_name)
+
+    # Read file
+    try:
+        file = open(file_name, 'r', encoding='utf-8')
+        line_list = file.readlines()
+        line_list = [i.strip('\n') for i in line_list]
+        file.close()
+    except BaseException as e:
+        status_string = 'Error editing file "{file_name}"'
+        status_string = status_string.format(file_name=file_name)
+        error = str(e)
+
+    # Edit line in file
+    if error == '':
+        for i in range(len(line_list)):
+            match = re.match(pattern=regex, string=line_list[i])
+
+            # Replace line in memory
+            if match is not None:
+                # Insert matching groups in replace (if any)
+                for n in range(1, 11):
+                    group_string = '{' + str(n) + '}'
+                    if group_string in replace:
+                        replace = replace.replace(group_string, match.group(n))
+                # Complete status string
+                status_string = status_string.format(old=line_list[i])
+                # Replace line in memory
+                line_list[i] = replace
+                break
+
+        # Not finding a match is an error so we set error status
+        if match is None:
+            status_string = 'No match was found for "{regex}" in "{file_name}"'
+            status_string = status_string.format(regex=regex,
+                                                 file_name=file_name)
+            error = None
+
+    # Write file
+    if error == '':
+        try:
+            tmp_file_name = file_name + '~'
+            file = open(tmp_file_name, 'w', encoding='utf-8')
+            file.writelines('\n'.join(line_list))
+            file.close()
+            os.rename(tmp_file_name, file_name)
+        except BaseException as e:
+            status_string = 'Error editing file "{file_name}"'
+            status_string = status_string.format(file_name=file_name)
+            error = str(e)
+
+    # Print quiet mode
+    if mode == 'quiet' and error != '':
+        status = '[ \033[1;91mERROR\033[0m ] '
+        status_string = status + status_string
+        print(status_string, flush=True)
+        if error is not None:
+            print(error, flush=True)
+
+    # Print regular mode
+    elif mode == 'regular' and (error != '' or show_ok):
+        print(status_string, flush=True)
+
+    # Print verbose and status mode
+    elif (mode == 'verbose' or mode == 'status') and (error != '' or show_ok):
+        status = '[ \033[1;32m OK  \033[0m ] '
+        if error != '':
+            status = '[ \033[1;91mERROR\033[0m ] '
+        status_string = status + status_string
+        print(status_string, flush=True)
+        if error != '' and error is not None:
+            print(error, flush=True)
+        elif mode == 'verbose':
+            print(content, flush=True)
 
 
 # noinspection PyShadowingNames
@@ -228,6 +338,7 @@ if verbose:
     mode = 'verbose'
 run_cmd.__defaults__ = (None, mode, show_ok)
 write_file.__defaults__ = (None, None, mode, show_ok, 'w')
+edit_line.__defaults__ = (None, None, None, mode, show_ok)
 
 # Copy program and installer script to remote location and run it there instead
 if remote != "":
@@ -254,7 +365,7 @@ if remote != "":
 # Add program specific content below this line
 
 # List of packages to install with dnf
-DNF_PACKAGE_LIST = ['httpd', 'python3-pip', 'createrepo', 'yum-utils']
+DNF_PACKAGE_LIST = ['httpd', 'python3-pip', 'createrepo', 'yum-utils', 'nano']
 
 # List of packages to install with pip3
 PIP3_PACKAGE_LIST = []
@@ -281,8 +392,7 @@ if not skip:
     run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ --repo=extras --download-metadata')
 
 # Add copy task to daily jobs
-content = """# create new
-#!/bin/bash
+content = """#!/bin/bash
 
 VER='8'
 ARCH='x86_64'
@@ -296,5 +406,22 @@ done
 write_file('/etc/cron.daily/update-repo', content)
 run_cmd('chmod 755 /etc/cron.daily/update-repo')
 
-# Restart apache for changes to take effect
+# Configure Apache httpd to provide repository for other Client Hosts
+content = """Alias /repos /var/www/repos
+<directory /var/www/repos>
+    Options +Indexes
+    Require all granted
+</directory>"""
+write_file('/etc/httpd/conf.d/repos.conf', content)
 run_cmd('systemctl restart httpd')
+
+# Disable password authentication
+edit_line(file_name='/etc/ssh/sshd_config',
+          regex='PasswordAuhentication +[a-zA-Z0-1]+.*',
+          replace='PasswordAuthentication no')
+run_cmd('systemctl restart sshd')
+
+
+# Allow HTTP service in firewall
+run_cmd('firewall-cmd --add-service=http --permanent')
+run_cmd('firewall-cmd --reload')

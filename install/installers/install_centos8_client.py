@@ -3,12 +3,10 @@
 """
 .. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
 
-Install
-*******
+Install CentOS 8 client
+***********************
 
-This is a program installer module. It can be used to install a program on a
-Linux system and prepare the Linux environment for this program to run
-properly. This script also requires a Linux environment.
+This script will configure a CentOS 8 server as a Dnf repository client.
 
 """
 
@@ -24,7 +22,7 @@ import sys
 run_cmd_vars = dict()
 
 # Name of project
-PROJECT = 'legcocar'
+PROJECT = 'dnf_client'
 run_cmd_vars['PROJECT'] = PROJECT
 
 # Install script location
@@ -302,7 +300,7 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
 def parse_command_line_options():
     """
     Parse options from the command line.
-
+    
     :rtype: Namespace
 
     """
@@ -365,87 +363,29 @@ if remote != "":
 
 # Add program specific content below this line
 
-# List of packages to install with apt
-APT_PACKAGE_LIST = [
-    'python3=3.7.3-1', 'openssl=1.1.1c-1', 'build-essential=12.6',
-    'tk-dev=8.6.9+1', 'libncurses5-dev=6.1+20181013-2+deb10u2',
-    'libncursesw5-dev=6.1+20181013-2+deb10u2', 'libreadline-dev=7.0-5',
-    'libgdbm-dev=1.18.1-4', 'libsqlite3-dev=3.27.2-3',
-    'libssl-dev=1.1.1d-0+deb10u2', 'libbz2-dev=1.0.6-9.2~deb10u1',
-    'libexpat1-dev=2.2.6-2+deb10u1', 'liblzma-dev=5.2.4-1',
-    'zlib1g-dev=1:1.2.11.dfsg-1', 'libffi-dev=3.2.1-9', 'uuid-dev=2.33.1-0.1',
-    'python3-pip=18.1-5+rpt1', 'apache2=2.4.38-3+deb10u3',
-    'libapache2-mod-wsgi-py3=4.6.5-1', 'rabbitmq-server=3.7.8-4',
-    'supervisor=3.3.5-1']
+# List of packages to install with dnf
+DNF_PACKAGE_LIST = ['nano']
 
 # List of packages to install with pip3
-PIP3_PACKAGE_LIST = [
-    'bricknil==0.9.3', 'flask==1.1.1', 'pika==1.1.0', 'bricknil-bleak==0.3.1',
-    'coloredlogs==10.0', 'verboselogs==1.7']
+PIP3_PACKAGE_LIST = []
 
-# Create supervisor log dir
-run_cmd('mkdir -p /var/log/supervisor')
-
-# Set bash_aliases for root
-run_cmd('''sed -i "/alias ls='ls -lah --color=auto'/d" /root/.bashrc''',
-        mode='quiet')
-run_cmd('''echo "alias ls='ls -lah --color=auto'" >> /root/.bashrc''')
-
-# Install packages with apt
+# Install packages with dnf
 if not skip:
-    run_cmd('apt-get update')
-    for package in APT_PACKAGE_LIST:
-        run_cmd('apt-get -y install {package}'.format(package=package))
+    run_cmd('dnf makecache')
+    for package in DNF_PACKAGE_LIST:
+        run_cmd('dnf -y install {package}'.format(package=package))
 
 # Install packages with pip3
 if not skip:
     for package in PIP3_PACKAGE_LIST:
         run_cmd('pip3 install {package}'.format(package=package))
 
-# Create project user
-if not skip:
-    run_cmd('useradd -m {PROJECT}')
 
-# Create directories, move files, and set permissions
-run_cmd('rm -Rf /srv/flask_wsgi', mode='quiet')
-run_cmd('rm -Rf /srv/{PROJECT}', mode='quiet')
-run_cmd('mkdir /srv/flask_wsgi')
-run_cmd('mkdir /srv/{PROJECT}')
-run_cmd('mkdir -p /var/log/{PROJECT}')
-run_cmd('chown -R {PROJECT}:{PROJECT} /var/log/{PROJECT}')
-run_cmd('chmod 755 /var/log/{PROJECT}')
-run_cmd('cp {DIR}/other/legcocar_template.conf /srv/{PROJECT}/')
-run_cmd('cp -R {DIR}/html_static /srv/{PROJECT}/')
-run_cmd('cp -R {DIR}/html_templates /srv/{PROJECT}/')
-run_cmd('cp {DIR}/src/flaskserver.py /srv/{PROJECT}/')
-run_cmd('cp {DIR}/src/wsgi.py /srv/flask_wsgi/')
-run_cmd('cp {DIR}/other/000-default.conf /etc/apache2/sites-available/')
-run_cmd('chown -R {PROJECT}:{PROJECT} /srv/flask_wsgi')
-run_cmd('chmod 755 /srv/flask_wsgi')
-run_cmd('chown -R {PROJECT}:{PROJECT} /srv/{PROJECT}')
-run_cmd('chmod 755 /srv/{PROJECT}')
-
-# Restart apache2 for settings to take affect
-run_cmd('service apache2 restart')
-
-# Create rabbitMQ .erlang.cookie
-if not skip:
-    run_cmd_vars['ERLANG_COOKIE'] = 'HEIQLGKPYPKGHVQFRPRF'
-    run_cmd('echo -n {ERLANG_COOKIE} > /var/lib/rabbitmq/.erlang.cookie')
-    run_cmd('chown rabbitmq.rabbitmq /var/lib/rabbitmq/.erlang.cookie')
-    run_cmd('chmod 400 /var/lib/rabbitmq/.erlang.cookie')
-
-# /etc/rabbitmq/enabled_plugins
-if not skip:
-    run_cmd(
-        '''echo '[rabbitmq_management].' > /etc/rabbitmq/enabled_plugins''')
-    run_cmd('chown rabbitmq.rabbitmq /etc/rabbitmq/enabled_plugins')
-
-# Create RabbitMQ project user
-if not skip:
-    run_cmd('rabbitmqctl add_user {PROJECT} {PROJECT}')
-    run_cmd('rabbitmqctl set_user_tags {PROJECT} administrator')
-
-# Restart RabbitMQ server
-if not skip:
-    run_cmd('service rabbitmq-server restart')
+# Change settings of dnf to refer to Local dnf Mirror Host
+content = """[BaseOS]
+name=CentOS-$releasever - Base
+baseurl=http://pgcentos1.local/repos/centos/$releasever/$basearch/os/BaseOS/
+gpgcheck=1
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial"""
+write_file('/etc/yum.repos.d/CentOS-Base.repo', content)
