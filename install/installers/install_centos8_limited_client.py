@@ -3,10 +3,11 @@
 """
 .. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
 
-Install Dnf repository
-**********************
+Install CentOS 8 limited client
+*******************************
 
-This script will configure a CentOS 8 server as a Dnf repository mirror.
+This script will configure a CentOS 8 server as a Dnf repository client to a
+Dnf repository containing as limited number of packets.
 
 """
 
@@ -23,7 +24,7 @@ import re
 run_cmd_vars = dict()
 
 # Name of project
-PROJECT = 'dnf_repo'
+PROJECT = 'dnf_client'
 run_cmd_vars['PROJECT'] = PROJECT
 
 # Install script location
@@ -138,8 +139,6 @@ def edit_line(file_name: str, regex: str, replace: str, mode: str = 'status',
         print(status_string, flush=True)
         if error != '' and error is not None:
             print(error, flush=True)
-        elif mode == 'verbose':
-            print(content, flush=True)
 
 
 # noinspection PyShadowingNames
@@ -365,7 +364,7 @@ if remote != "":
 # Add program specific content below this line
 
 # List of packages to install with dnf
-DNF_PACKAGE_LIST = ['httpd', 'python3-pip', 'createrepo', 'yum-utils', 'nano']
+DNF_PACKAGE_LIST = ['nano']
 
 # List of packages to install with pip3
 PIP3_PACKAGE_LIST = []
@@ -381,47 +380,39 @@ if not skip:
     for package in PIP3_PACKAGE_LIST:
         run_cmd('pip3 install {package}'.format(package=package))
 
-# Create a Directory to Store the Repositories
-run_cmd('mkdir --parents /var/www/repos/centos/8/x86_64/os')
-run_cmd('chmod -R 755 /var/www/repos')
 
-# Copy from official repository
+# Remove all repositories
+run_cmd('rm /etc/yum.repos.d/*')
+
+# Connect to limited local Dnf Mirror host
+content = """[Limited]
+name=CentOS-$releasever - Limited
+baseurl=https://pgcentos1.local/repos/centos/$releasever/$basearch/os/limited/
+gpgcheck=1
+enabled=1
+gpgkey=https://pgcentos1.local/RPM-GPG-KEY
+
+sslverify=1
+sslclientcert=/var/lib/dnf/client.crt
+sslclientkey=/var/lib/dnf/client.key"""
+write_file('/etc/yum.repos.d/limited.repo', content)
+
+# Connect to limited local pip3 host
+run_cmd('mkdir -p /root/.pip')
+content = """[global]
+; Extra index to private pypi dependencies
+extra-index-url = https://pypi:pyp1@pypi.pgcentos1.local
+trusted-host = pypi.pgcentos1.local"""
+write_file('/root/.pip/pip.conf', content)
+
+# Add certificates to trust
+run_cmd('rm /etc/pki/ca-trust/source/anchors/dnf.crt')
+run_cmd('ln -s /var/lib/dnf/client.crt /etc/pki/ca-trust/source/anchors/dnf.crt')
+run_cmd('update-ca-trust extract')
+
+# Generate
 if not skip:
-    run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ --repo=BaseOS --download-metadata')
-    run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ --repo=AppStream --download-metadata')
-    run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ --repo=extras --download-metadata')
-
-# Add copy task to daily jobs
-content = """#!/bin/bash
-
-VER='8'
-ARCH='x86_64'
-REPOS=(BaseOS AppStream extras)
-
-for REPO in ${REPOS[@]}
-do
-    reposync -p /var/www/repos/centos/${VER}/${ARCH}/os/ --repo=${REPO} --download-metadata --newest-only
-done
-"""
-write_file('/etc/cron.daily/update-repo', content)
-run_cmd('chmod 755 /etc/cron.daily/update-repo')
-
-# Configure Apache httpd to provide repository for other Client Hosts
-content = """Alias /repos /var/www/repos
-<directory /var/www/repos>
-    Options +Indexes
-    Require all granted
-</directory>"""
-write_file('/etc/httpd/conf.d/repos.conf', content)
-run_cmd('systemctl restart httpd')
-
-# Disable password authentication
-edit_line(file_name='/etc/ssh/sshd_config',
-          regex='PasswordAuhentication +[a-zA-Z0-1]+.*',
-          replace='PasswordAuthentication no')
-run_cmd('systemctl restart sshd')
-
-
-# Allow HTTP service in firewall
-run_cmd('firewall-cmd --add-service=http --permanent')
-run_cmd('firewall-cmd --reload')
+    print()
+    print('The following needs to be done manually:')
+    print('Place dnf client key here: /var/lib/dnf/client.key')
+    print('Place pnf client certificate here: /var/lib/dnf/client.crt')

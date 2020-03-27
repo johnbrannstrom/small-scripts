@@ -88,3 +88,9 @@ https://www.youtube.com/watch?v=MTc3zcnIZOw
 
 #### 2.22 Splendid well done!
 https://www.youtube.com/watch?v=JexO-N39Nzg&start=96
+
+#### 2.23 Tha's gold Jerry, Gold!
+https://www.youtube.com/watch?v=CF7OnW4XDck
+
+#### 2.24 You can't handle the truth
+https://www.youtube.com/watch?v=MMzd40i8TfA

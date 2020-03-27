@@ -13,12 +13,6 @@ This is a template for writing a script that accepts command line arguments.
 # Built in modules
 import argparse
 
-# Third party modules
-# TODO import modules here
-
-# Local modules
-# TODO import modules here
-
 
 class Main:
     """Contains the script"""
@@ -32,8 +26,8 @@ class Main:
         :returns: Command line arguments.
 
         """
-        debug_help = 'Enter help text for parameter debug here.'  # TODO
-        description = 'Short Description of what the script does.'  # TODO
+        debug_help = 'Enter help text for parameter debug here.'  # TODO edit this
+        description = 'Short Description of what the script does.'  # TODO edit this
         parser = argparse.ArgumentParser(description=description)
         parser.add_argument('--debug', type=int, default="",
                             help=debug_help, required=False)
@@ -46,8 +40,8 @@ class Main:
         Run the script.
         """
         args = self._parse_command_line_options()
-        print(args.debug)  # TODO delete
         # TODO enter code here
+
 
 if __name__ == '__main__':
     main = Main()

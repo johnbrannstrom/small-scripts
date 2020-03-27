@@ -7,8 +7,8 @@ Install
 *******
 
 This is a program installer module. It can be used to install a program on a
-Linux system and prepare the Linux environment for this program to run
-properly. This script also requires a Linux environment.
+Linux system and prepare the Linux environment for a program to run properly.
+This script requires bash.
 
 """
 
@@ -17,7 +17,7 @@ import subprocess
 import argparse
 import os
 import sys
-
+import re
 
 # Adding variables and values in this dictionary will enable them to be
 # substituted into run_cmd commands
@@ -139,8 +139,6 @@ def edit_line(file_name: str, regex: str, replace: str, mode: str = 'status',
         print(status_string, flush=True)
         if error != '' and error is not None:
             print(error, flush=True)
-        elif mode == 'verbose':
-            print(content, flush=True)
 
 
 # noinspection PyShadowingNames
@@ -227,6 +225,8 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                                screen.
                     "quiet":   Only print errors.
     :param show_ok: If ok status should be shown.
+    :rtype:   str
+    :returns: Target command stdout
 
     """
     # Insert values from run_cmd_vars if they exist
@@ -239,6 +239,7 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
     if mode.lower() == 'regular' or mode.lower() == 'verbose':
         print(command, flush=True)
         error = False
+        stdout = ''
         with subprocess.Popen(command,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
@@ -246,10 +247,12 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                               shell=True,
                               universal_newlines=True) as p:
             for line in p.stdout:
+                stdout += line
                 print(line, end='', flush=True)
             for line in p.stderr:
                 error = True
                 print(line, end='', flush=True)
+
         # Print status for verbose mode
         if mode.lower() == 'verbose':
             if error:
@@ -262,6 +265,9 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
             status_string = status_string.format(status=status,
                                                  command=command)
             print(status_string, flush=True)
+
+        # Return stdout
+        return stdout
 
     # Handle status mode
     elif mode == 'status':
@@ -282,10 +288,14 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                                                  stderr=stderr)
             print(status_string, flush=True)
 
+        # Return stdout
+        return result.stdout.decode('utf-8')
+
     # Handle quiet mode
     else:
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
+
         # Print status if we had an error
         if result.returncode > 0:
             status = '\033[1;91mERROR\033[0m'
@@ -295,6 +305,9 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                                                  command=command,
                                                  stderr=stderr)
             print(status_string, flush=True)
+
+        # Return stdout
+        return result.stdout.decode('utf-8')
 
 
 # Parse command line arguments
@@ -306,15 +319,20 @@ def parse_command_line_options():
     :rtype: Namespace
 
     """
+    force_first_help = (
+        'Supplying this will run the script as if it was the first time.')
     skip_help = (
-        'Supplying this flag will skip as many time consuming steps as possibl'
-        'e to speed up the installation process. This is used for development '
-        'purposes only.')
-    show_ok_help = 'Supplying this flag will also actions with show ok status.'
+        'Supplying this flag will skip as many time consuming steps as '
+        'possible to speed up the installation process. This is used for '
+        'development purposes only.')
+    show_ok_help = 'Supplying this flag will show actions with ok status.'
     verbose_help = 'Supplying this flag will enable all possible output.'
     remote_help = 'Install program on remote user@host.'
     description = 'Installer script for the {PROJECT}.'.format(PROJECT=PROJECT)
     parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-f', '--force-first', default=False,
+                        action='store_true', help=force_first_help,
+                        required=False)
     parser.add_argument('-s', '--skip', default=False, action='store_true',
                         help=skip_help, required=False)
     parser.add_argument('-o', '--show-ok', default=False, action='store_true',
@@ -332,6 +350,7 @@ skip = args.skip
 show_ok = args.show_ok
 remote = args.remote
 verbose = args.verbose
+force_first = args.force_first
 
 # Set default values according to command line options
 mode = 'status'
@@ -345,10 +364,10 @@ edit_line.__defaults__ = (None, None, None, mode, show_ok)
 if remote != "":
     run_cmd_vars['REMOTE'] = remote
     run_cmd("ssh {REMOTE} 'mkdir -p /tmp/{PROJECT}'", mode='quiet')
-    run_cmd("echo 'put -r {DIR}/*' > /tmp/sftp_batchfile", mode='quiet')
-    run_cmd("sftp -b /tmp/sftp_batchfile {REMOTE}:/tmp/{PROJECT}",
+    run_cmd("echo 'put -r {DIR}/*' > /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
+    run_cmd("sftp -b /tmp/{PROJECT}_sftp_batchfile {REMOTE}:/tmp/{PROJECT}",
             mode='regular')
-    run_cmd("rm /tmp/sftp_batchfile", mode='quiet')
+    run_cmd("rm /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
 
     # Run install script on remote side
     opts = ''
@@ -359,9 +378,19 @@ if remote != "":
         opts += ' -o'
     if verbose:
         opts += ' -v'
+    if force_first:
+        opts += ' -f'
     command = command.replace('{opts}', opts)
     run_cmd(command, mode='regular')
     sys.exit(0)
+
+# Set if we are running the script for the first time
+command = "if [ -f '/var/tmp/{PROJECT}_once' ]; then echo 'true'; fi"
+first = run_cmd(command, mode='quiet') == 'true'
+if not first:
+    run_cmd('touch /var/tmp/{PROJECT}_once', mode='quiet')
+if force_first:
+    first = True
 
 # Add program specific content below this line
 

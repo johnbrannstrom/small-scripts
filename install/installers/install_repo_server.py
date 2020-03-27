@@ -3,10 +3,12 @@
 """
 .. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
 
-Install CentOS 8 client
-***********************
+Install repository server
+*************************
 
-This script will configure a CentOS 8 server as a Dnf repository client.
+This script will configure a CentOS 8 server as a:
+* Dnf repository mirror/server.
+* pip repository server.
 
 """
 
@@ -17,13 +19,12 @@ import os
 import sys
 import re
 
-
 # Adding variables and values in this dictionary will enable them to be
 # substituted into run_cmd commands
 run_cmd_vars = dict()
 
 # Name of project
-PROJECT = 'dnf_client'
+PROJECT = 'dnf_repo'
 run_cmd_vars['PROJECT'] = PROJECT
 
 # Install script location
@@ -224,6 +225,8 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                                screen.
                     "quiet":   Only print errors.
     :param show_ok: If ok status should be shown.
+    :rtype:   str
+    :returns: Target command stdout
 
     """
     # Insert values from run_cmd_vars if they exist
@@ -236,6 +239,7 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
     if mode.lower() == 'regular' or mode.lower() == 'verbose':
         print(command, flush=True)
         error = False
+        stdout = ''
         with subprocess.Popen(command,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
@@ -243,10 +247,12 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                               shell=True,
                               universal_newlines=True) as p:
             for line in p.stdout:
+                stdout += line
                 print(line, end='', flush=True)
             for line in p.stderr:
                 error = True
                 print(line, end='', flush=True)
+
         # Print status for verbose mode
         if mode.lower() == 'verbose':
             if error:
@@ -259,6 +265,9 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
             status_string = status_string.format(status=status,
                                                  command=command)
             print(status_string, flush=True)
+
+        # Return stdout
+        return stdout
 
     # Handle status mode
     elif mode == 'status':
@@ -279,10 +288,14 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                                                  stderr=stderr)
             print(status_string, flush=True)
 
+        # Return stdout
+        return result.stdout.decode('utf-8')
+
     # Handle quiet mode
     else:
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
+
         # Print status if we had an error
         if result.returncode > 0:
             status = '\033[1;91mERROR\033[0m'
@@ -293,25 +306,33 @@ def run_cmd(command: str, mode: str = 'status', show_ok: bool = False):
                                                  stderr=stderr)
             print(status_string, flush=True)
 
+        # Return stdout
+        return result.stdout.decode('utf-8')
+
 
 # Parse command line arguments
 # noinspection PyShadowingNames
 def parse_command_line_options():
     """
     Parse options from the command line.
-    
+
     :rtype: Namespace
 
     """
+    force_first_help = (
+        'Supplying this will run the script as if it was the first time.')
     skip_help = (
-        'Supplying this flag will skip as many time consuming steps as possibl'
-        'e to speed up the installation process. This is used for development '
-        'purposes only.')
-    show_ok_help = 'Supplying this flag will also actions with show ok status.'
+        'Supplying this flag will skip as many time consuming steps as '
+        'possible to speed up the installation process. This is used for '
+        'development purposes only.')
+    show_ok_help = 'Supplying this flag will show actions with ok status.'
     verbose_help = 'Supplying this flag will enable all possible output.'
     remote_help = 'Install program on remote user@host.'
     description = 'Installer script for the {PROJECT}.'.format(PROJECT=PROJECT)
     parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-f', '--force-first', default=False,
+                        action='store_true', help=force_first_help,
+                        required=False)
     parser.add_argument('-s', '--skip', default=False, action='store_true',
                         help=skip_help, required=False)
     parser.add_argument('-o', '--show-ok', default=False, action='store_true',
@@ -329,6 +350,7 @@ skip = args.skip
 show_ok = args.show_ok
 remote = args.remote
 verbose = args.verbose
+force_first = args.force_first
 
 # Set default values according to command line options
 mode = 'status'
@@ -342,10 +364,10 @@ edit_line.__defaults__ = (None, None, None, mode, show_ok)
 if remote != "":
     run_cmd_vars['REMOTE'] = remote
     run_cmd("ssh {REMOTE} 'mkdir -p /tmp/{PROJECT}'", mode='quiet')
-    run_cmd("echo 'put -r {DIR}/*' > /tmp/sftp_batchfile", mode='quiet')
-    run_cmd("sftp -b /tmp/sftp_batchfile {REMOTE}:/tmp/{PROJECT}",
+    run_cmd("echo 'put -r {DIR}/*' > /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
+    run_cmd("sftp -b /tmp/{PROJECT}_sftp_batchfile {REMOTE}:/tmp/{PROJECT}",
             mode='regular')
-    run_cmd("rm /tmp/sftp_batchfile", mode='quiet')
+    run_cmd("rm /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
 
     # Run install script on remote side
     opts = ''
@@ -356,14 +378,25 @@ if remote != "":
         opts += ' -o'
     if verbose:
         opts += ' -v'
+    if force_first:
+        opts += ' -f'
     command = command.replace('{opts}', opts)
     run_cmd(command, mode='regular')
     sys.exit(0)
 
+# Set if we are running the script for the first time
+command = "if [ -f '/var/tmp/{PROJECT}_once' ]; then echo 'true'; fi"
+first = run_cmd(command, mode='quiet') == 'true'
+if not first:
+    run_cmd('touch /var/tmp/{PROJECT}_once', mode='quiet')
+if force_first:
+    first = True
+
 # Add program specific content below this line
 
 # List of packages to install with dnf
-DNF_PACKAGE_LIST = ['nano']
+DNF_PACKAGE_LIST = ['httpd', 'python3-pip', 'createrepo', 'yum-utils', 'nano',
+                    'mod_ssl', 'createrepo']
 
 # List of packages to install with pip3
 PIP3_PACKAGE_LIST = []
@@ -379,46 +412,121 @@ if not skip:
     for package in PIP3_PACKAGE_LIST:
         run_cmd('pip3 install {package}'.format(package=package))
 
-# Change settings of dnf to refer to Local dnf Mirror Host
-content = """[BaseOS]
-name=CentOS-$releasever - Base
-baseurl=https://pgcentos1.local/repos/centos/$releasever/$basearch/os/BaseOS/
-gpgcheck=1
-enabled=1
-gpgkey=https://pgcentos1.local/RPM-GPG-KEY
+# Create a Directory to Store the Repositories
+run_cmd('mkdir --parents /var/www/repos/centos/8/x86_64/os')
+run_cmd('chmod -R 755 /var/www/repos')
 
-sslverify=1
-sslclientcert=/var/lib/dnf/client.crt
-sslclientkey=/var/lib/dnf/client.key"""
-write_file('/etc/yum.repos.d/CentOS-Base.repo', content)
-
-content = """[AppStream]
-name=CentOS-$releasever - AppStream
-baseurl=https://pgcentos1.local/repos/centos/$releasever/$basearch/os/AppStream/
-gpgcheck=1
-enabled=1
-gpgkey=https://pgcentos1.local/RPM-GPG-KEY
-
-sslverify=1
-sslclientcert=/var/lib/dnf/client.crt
-sslclientkey=/var/lib/dnf/client.key"""
-write_file('/etc/yum.repos.d/CentOS-Extras.repo', content)
-
-content = """[extras]
-name=CentOS-$releasever - Extras
-baseurl=https://pgcentos1.local/repos/centos/$releasever/$basearch/os/extras/
-gpgcheck=1
-enabled=1
-gpgkey=https://pgcentos1.local/RPM-GPG-KEY
-
-sslverify=1
-sslclientcert=/var/lib/dnf/client.crt
-sslclientkey=/var/lib/dnf/client.key"""
-write_file('/etc/yum.repos.d/CentOS-Extras.repo', content)
-
-# Generate
+# Copy from official repository
 if not skip:
-    print()
-    print('The following needs to be done manually:')
-    print('Place client key here: /var/lib/dnf/client.key')
-    print('Place client cert here: /var/lib/dnf/client.crt')
+    run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ '
+            '--repo=BaseOS --download-metadata')
+    run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ '
+            '--repo=AppStream --download-metadata')
+    run_cmd('reposync -p /var/www/repos/centos/8/x86_64/os/ '
+            '--repo=extras --download-metadata')
+
+# Add copy task to daily jobs
+content = """#!/bin/bash
+
+VER='8'
+ARCH='x86_64'
+REPOS=(BaseOS AppStream extras)
+
+for REPO in ${REPOS[@]}
+do
+    reposync -p /var/www/repos/centos/${VER}/${ARCH}/os/ --repo=${REPO} --download-metadata --newest-only
+done
+"""
+write_file('/etc/cron.daily/update-repo', content)
+run_cmd('chmod 755 /etc/cron.daily/update-repo')
+
+# Create custom limited repo
+run_cmd('rm -Rf /var/www/repos/centos/8/x86_64/os/limited')
+run_cmd('mkdir -p /var/www/repos/centos/8/x86_64/os/limited/Packages')
+run_cmd('touch /var/www/repos/centos/8/x86_64/os/limited/mirrorlist')
+# Add packages to repo
+run_cmd('ln /var/www/repos/centos/8/x86_64/os/BaseOS/Packages/nano-2.9.8-1.el8.x86_64.rpm '
+        '/var/www/repos/centos/8/x86_64/os/limited/Packages')
+# Run create repository command
+run_cmd('createrepo /var/www/repos/centos/8/x86_64/os/limited')
+
+# Create custom limited pip3 repo
+run_cmd('mkdir -p /var/www/repos/pip3')
+content = """<VirtualHost *:80>
+    ServerName pypi.myserver.com
+
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName pgcentos1.local
+    DocumentRoot /var/www/repos/pip3
+
+    SSLEngine On
+    SSLCertificateFile /etc/pki/tls/certs/dnf.crt
+    SSLCertificateKeyFile /etc/pki/tls/private/dnf.key
+
+    <Directory /var/www/repos/pip3/>
+        AllowOverride None
+        Options +Indexes
+        IndexOptions SuppressColumnSorting
+        IndexIgnore ..
+        Order deny,allow
+        Allow from all
+
+        AuthType Basic
+        AuthName "My Server"
+        AuthBasicProvider file
+        AuthUserFile /etc/apache2/passwords_pypi
+        Require valid-user
+    </Directory>
+
+    LogLevel warn
+    ErrorLog /var/log/httpd/pypi3-error.log
+    CustomLog /var/log/httpd/pypi3-access.log combined
+</VirtualHost>
+"""
+write_file('/etc/httpd/conf.d/pypi3.conf', content)
+
+
+# Configure Apache httpd to provide repository for other Client Hosts
+content = """Alias /repos /var/www/repos
+<directory /var/www/repos>
+    Options +Indexes
+    Require all granted
+</directory>"""
+write_file('/etc/httpd/conf.d/repos.conf', content)
+edit_line(file_name='/etc/httpd/conf.d/ssl.conf',
+          regex='SSLCertificateFile +.*',
+          replace='SSLCertificateFile /etc/pki/tls/certs/dnf.crt')
+edit_line(file_name='/etc/httpd/conf.d/ssl.conf',
+          regex='SSLCertificateKeyFile +.*',
+          replace='SSLCertificateKeyFile /etc/pki/tls/private/dnf.key')
+run_cmd('systemctl enable httpd')
+
+# Disable password authentication
+edit_line(file_name='/etc/ssh/sshd_config',
+          regex='PasswordAuthentication +[a-zA-Z0-1]+.*',
+          replace='PasswordAuthentication no')
+run_cmd('systemctl restart sshd')
+
+# Allow HTTPS service in firewall
+run_cmd('firewall-cmd --add-service=https --permanent')
+run_cmd('firewall-cmd --reload')
+
+# Create key and certificate and then copy both to client
+if first:
+    run_cmd('openssl genrsa -out /etc/pki/tls/private/dnf.key 2048')
+    run_cmd('openssl req -days 3650 -x509 -new -nodes '
+            '-key /etc/pki/tls/private/dnf.key -sha256 '
+            '-out /etc/pki/tls/certs/dnf.crt '
+            '-subj "/C=SE/ST=Östergötland/L=Norrköping/CN=pgcentos1.local"')
+    run_cmd('update-ca-trust extract')
+    run_cmd('scp /etc/pki/tls/private/dnf.key root@pgcentos2:/var/lib/dnf/client.key')
+    run_cmd('scp /etc/pki/tls/certs/dnf.crt root@pgcentos2:/var/lib/dnf/client.crt')
+
+# Activate apache changes
+run_cmd('systemctl reload httpd')
+run_cmd('systemctl restart httpd')

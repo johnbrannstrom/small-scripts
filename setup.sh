@@ -117,6 +117,6 @@ run_echo "chown rabbitmq.rabbitmq /etc/rabbitmq/enabled_plugins"
 # Create RabbitMQ project user
 run_echo "rabbitmqctl add_user ${PROJECT} ${PROJECT}"
 run_echo "rabbitmqctl set_user_tags ${PROJECT} administrator"
-# TODO uncomment
+
 # Restart RabbitMQ server
-#run_echo "service rabbitmq-server restart"
+run_echo "service rabbitmq-server restart"
