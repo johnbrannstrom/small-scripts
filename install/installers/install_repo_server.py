@@ -453,7 +453,7 @@ run_cmd('createrepo /var/www/repos/centos/8/x86_64/os/limited')
 # Create custom limited pip3 repo
 run_cmd('mkdir -p /var/www/repos/pip3')
 content = """<VirtualHost *:80>
-    ServerName pypi.myserver.com
+    ServerName pgcentos1.local
 
     RewriteEngine On
     RewriteCond %{HTTPS} off
@@ -461,7 +461,7 @@ content = """<VirtualHost *:80>
 </VirtualHost>
 
 <VirtualHost *:443>
-    ServerName pgcentos1.local
+    ServerName pypi.pgcentos1.local
     DocumentRoot /var/www/repos/pip3
 
     SSLEngine On
@@ -479,7 +479,7 @@ content = """<VirtualHost *:80>
         AuthType Basic
         AuthName "My Server"
         AuthBasicProvider file
-        AuthUserFile /etc/apache2/passwords_pypi
+        AuthUserFile /etc/httpd/passwords_pypi
         Require valid-user
     </Directory>
 
@@ -530,3 +530,8 @@ if first:
 # Activate apache changes
 run_cmd('systemctl reload httpd')
 run_cmd('systemctl restart httpd')
+
+# Manual commands
+if first:
+    print('Run these commands manually:')
+    print('htpasswd -c /etc/httpd/passwords_pypi pypi')
