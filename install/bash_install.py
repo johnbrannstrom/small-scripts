@@ -363,11 +363,7 @@ edit_line.__defaults__ = (None, None, None, mode, show_ok)
 # Copy program and installer script to remote location and run it there instead
 if remote != "":
     run_cmd_vars['REMOTE'] = remote
-    run_cmd("ssh {REMOTE} 'mkdir -p /tmp/{PROJECT}'", mode='quiet')
-    run_cmd("echo 'put -r {DIR}/*' > /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
-    run_cmd("sftp -b /tmp/{PROJECT}_sftp_batchfile {REMOTE}:/tmp/{PROJECT}",
-            mode='regular')
-    run_cmd("rm /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
+    run_cmd('scp -r {DIR} {REMOTE}:/tmp/{PROJECT}', mode='regular')
 
     # Run install script on remote side
     opts = ''
