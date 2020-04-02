@@ -7,7 +7,7 @@ Install repository server
 *************************
 
 This script will configure a CentOS 8 server as a:
-* Dnf repository mirror/server.
+* dnf repository mirror/server.
 * pip repository server.
 
 """
@@ -24,7 +24,7 @@ import re
 run_cmd_vars = dict()
 
 # Name of project
-PROJECT = 'dnf_repo'
+PROJECT = 'repo_srv'
 run_cmd_vars['PROJECT'] = PROJECT
 
 # Install script location
@@ -364,7 +364,8 @@ edit_line.__defaults__ = (None, None, None, mode, show_ok)
 if remote != "":
     run_cmd_vars['REMOTE'] = remote
     run_cmd("ssh {REMOTE} 'mkdir -p /tmp/{PROJECT}'", mode='quiet')
-    run_cmd("echo 'put -r {DIR}/*' > /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
+    run_cmd("echo 'put -r {DIR}/*' > /tmp/{PROJECT}_sftp_batchfile",
+            mode='quiet')
     run_cmd("sftp -b /tmp/{PROJECT}_sftp_batchfile {REMOTE}:/tmp/{PROJECT}",
             mode='regular')
     run_cmd("rm /tmp/{PROJECT}_sftp_batchfile", mode='quiet')
@@ -399,7 +400,7 @@ DNF_PACKAGE_LIST = ['httpd', 'python3-pip', 'createrepo', 'yum-utils', 'nano',
                     'mod_ssl', 'createrepo']
 
 # List of packages to install with pip3
-PIP3_PACKAGE_LIST = []
+PIP3_PACKAGE_LIST = ['python-pypi-mirror']
 
 # Install packages with dnf
 if not skip:
@@ -451,9 +452,17 @@ run_cmd('ln /var/www/repos/centos/8/x86_64/os/BaseOS/Packages/nano-2.9.8-1.el8.x
 run_cmd('createrepo /var/www/repos/centos/8/x86_64/os/limited')
 
 # Create custom limited pip3 repo
-run_cmd('mkdir -p /var/www/repos/pip3')
+run_cmd_vars['PIP3_DIR'] = '/var/www/repos/pip3'
+if first:
+    run_cmd('ln -s /usr/bin/pip3 /usr/bin/pip')
+run_cmd('mkdir -p {PIP3_DIR}')
+run_cmd('rm -Rf {PIP3_DIR}/*')
+if not skip:
+    run_cmd('pypi-mirror download -d {PIP3_DIR}/download pyyaml')
+    run_cmd('pypi-mirror download -d {PIP3_DIR}/download requests')
+run_cmd('pypi-mirror create -d {PIP3_DIR}/download -m {PIP3_DIR}/simple')
 content = """<VirtualHost *:80>
-    ServerName pgcentos1.local
+    ServerName pypi.pgcentos1.local
 
     RewriteEngine On
     RewriteCond %{HTTPS} off
@@ -462,25 +471,19 @@ content = """<VirtualHost *:80>
 
 <VirtualHost *:443>
     ServerName pypi.pgcentos1.local
-    DocumentRoot /var/www/repos/pip3
+    DocumentRoot {PIP3_DIR}/simple
 
     SSLEngine On
-    SSLCertificateFile /etc/pki/tls/certs/dnf.crt
-    SSLCertificateKeyFile /etc/pki/tls/private/dnf.key
+    SSLCertificateFile /etc/pki/tls/certs/pip3.crt
+    SSLCertificateKeyFile /etc/pki/tls/private/pip3.key
 
-    <Directory /var/www/repos/pip3/>
+    <Directory {PIP3_DIR}/>
         AllowOverride None
         Options +Indexes
         IndexOptions SuppressColumnSorting
         IndexIgnore ..
         Order deny,allow
         Allow from all
-
-        AuthType Basic
-        AuthName "My Server"
-        AuthBasicProvider file
-        AuthUserFile /etc/httpd/passwords_pypi
-        Require valid-user
     </Directory>
 
     LogLevel warn
@@ -507,16 +510,18 @@ edit_line(file_name='/etc/httpd/conf.d/ssl.conf',
 run_cmd('systemctl enable httpd')
 
 # Disable password authentication
-edit_line(file_name='/etc/ssh/sshd_config',
-          regex='PasswordAuthentication +[a-zA-Z0-1]+.*',
-          replace='PasswordAuthentication no')
-run_cmd('systemctl restart sshd')
+if first:
+    edit_line(file_name='/etc/ssh/sshd_config',
+              regex='PasswordAuthentication +[a-zA-Z0-1]+.*',
+              replace='PasswordAuthentication no')
+    run_cmd('systemctl restart sshd')
 
 # Allow HTTPS service in firewall
-run_cmd('firewall-cmd --add-service=https --permanent')
-run_cmd('firewall-cmd --reload')
+if first:
+    run_cmd('firewall-cmd --add-service=https --permanent')
+    run_cmd('firewall-cmd --reload')
 
-# Create key and certificate and then copy both to client
+# Create key and certificate for dnf and then copy both to client
 if first:
     run_cmd('openssl genrsa -out /etc/pki/tls/private/dnf.key 2048')
     run_cmd('openssl req -days 3650 -x509 -new -nodes '
@@ -524,14 +529,23 @@ if first:
             '-out /etc/pki/tls/certs/dnf.crt '
             '-subj "/C=SE/ST=Östergötland/L=Norrköping/CN=pgcentos1.local"')
     run_cmd('update-ca-trust extract')
-    run_cmd('scp /etc/pki/tls/private/dnf.key root@pgcentos2:/var/lib/dnf/client.key')
-    run_cmd('scp /etc/pki/tls/certs/dnf.crt root@pgcentos2:/var/lib/dnf/client.crt')
+    run_cmd('scp /etc/pki/tls/private/dnf.key '
+            'root@pgcentos2:/var/lib/dnf/client.key')
+    run_cmd('scp /etc/pki/tls/certs/dnf.crt '
+            'root@pgcentos2:/var/lib/dnf/client.crt')
 
-# Activate apache changes
+# Create key and certificate for pip3 and then copy/add cert to client
+if first:
+    run_cmd('openssl genrsa -out /etc/pki/tls/private/pip3.key 2048')
+    run_cmd('openssl req -days 3650 -x509 -new -nodes '
+            '-key /etc/pki/tls/private/pip3.key -sha256 '
+            '-out /etc/pki/tls/certs/pip3.crt '
+            '-subj "/C=SE/ST=Östergötland/L=Norrköping/CN=pypi.pgcentos1.local"')
+    run_cmd('update-ca-trust extract')
+    run_cmd('scp /etc/pki/tls/certs/pip3.crt '
+            'root@pgcentos2:/etc/pki/ca-trust/source/anchors/pip3.crt')
+    run_cmd('ssh root@pgcentos2 "update-ca-trust extract"')
+
+# Activate apache httpd changes
 run_cmd('systemctl reload httpd')
 run_cmd('systemctl restart httpd')
-
-# Manual commands
-if first:
-    print('Run these commands manually:')
-    print('htpasswd -c /etc/httpd/passwords_pypi pypi')

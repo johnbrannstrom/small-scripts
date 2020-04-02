@@ -416,6 +416,15 @@ sslclientcert=/var/lib/dnf/client.crt
 sslclientkey=/var/lib/dnf/client.key"""
 write_file('/etc/yum.repos.d/CentOS-Extras.repo', content)
 
+# Add local pip repo for root user
+if not skip:
+    content ="""[global]
+; Extra index to private pypi dependencies
+index-url = https://pypi.pgcentos1.local
+trusted-host = pypi.pgcentos1.local
+"""
+    write_file('/root/.pip/pip.conf', content)
+
 # Generate
 if not skip:
     print()
