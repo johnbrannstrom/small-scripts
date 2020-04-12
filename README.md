@@ -94,3 +94,6 @@ https://www.youtube.com/watch?v=CF7OnW4XDck
 
 #### 2.24 You can't handle the truth
 https://www.youtube.com/watch?v=MMzd40i8TfA
+
+#### 2.25 Lawers, guns & money
+https://www.youtube.com/watch?v=lP5Xv7QqXiM&start=110
