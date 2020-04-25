@@ -97,3 +97,6 @@ https://www.youtube.com/watch?v=MMzd40i8TfA
 
 #### 2.25 Lawers, guns & money
 https://www.youtube.com/watch?v=lP5Xv7QqXiM&start=110
+
+#### 2.26 Fuck you motherfucker
+https://www.youtube.com/watch?v=n5BrLfbCoGQ
