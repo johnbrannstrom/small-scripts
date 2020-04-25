@@ -23,6 +23,13 @@ import re
 class BashInstall:
     """Installer for Bash."""
 
+    actions_choices: dict = {
+        'default': 'Default action',
+        'all': 'Run all actions'
+    }
+    """List of available installer actions. Actions should be added to this 
+    list  as needed."""
+
     # noinspection PyShadowingNames
     def __init__(self, project: str, script: str):
         """
@@ -52,6 +59,7 @@ class BashInstall:
 
         # Parse command line option
         args = self._parse_command_line_options()
+        self.actions = args.actions
         skip = self.skip = args.skip
         self._show_ok = show_ok = args.show_ok
         remote = args.remote
@@ -73,7 +81,7 @@ class BashInstall:
                          mode='regular')
 
             # Run install script on remote side
-            opts = ''
+            opts = ' -a ' + ' '.join(args.actions)
             command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT}{opts}'"
             if skip:
                 opts += ' -s'
@@ -402,6 +410,8 @@ class BashInstall:
         :rtype: Namespace
 
         """
+        action_help = '\n'.join(
+            [k+': '+v for k, v in self.actions_choices.items()])
         force_first_help = (
             'Supplying this will run the script as if it was the first time.')
         skip_help = (
@@ -413,7 +423,13 @@ class BashInstall:
         remote_help = 'Install program on remote user@host.'
         description = (
             'Installer script for the {project}.'.format(project=self.project))
-        parser = argparse.ArgumentParser(description=description)
+        parser = argparse.ArgumentParser(
+            description=description,
+            formatter_class=argparse.RawTextHelpFormatter)
+        parser.add_argument('-a', '--actions', default=['default'], nargs="+",
+                            choices=list(self.actions_choices.keys()),
+                            help=action_help,
+                            required=False)
         parser.add_argument('-f', '--force-first', default=False,
                             action='store_true', help=force_first_help,
                             required=False)
@@ -428,11 +444,19 @@ class BashInstall:
         parser.add_argument('-r', '--remote', type=str, default="",
                             help=remote_help, required=False)
         args = parser.parse_args()
+
+        # Add all actions if "all" is found in action list
+        if 'all' in args.actions:
+            args.actions = list(self.actions_choices)
+
         return args
 
 # Below is a commented out example of how to use BashInstall
-# bash_installer = BashInstall(project='project')
+# bash_installer = BashInstall(project='johnfin',
+#                              script=os.path.basename(__file__))
 # run_cmd = bash_installer.run_cmd
+# write_file = bash_installer.write_file
+# edit_line = bash_installer.edit_line
 # first = bash_installer.first
 # skip = bash_installer.skip
 # run_cmd_vars = bash_installer.run_cmd_vars
