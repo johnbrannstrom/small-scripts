@@ -132,7 +132,7 @@ class BashInstall:
             show_ok = self._show_ok
 
         error = ''
-        # Insert values from run_cmd_vars in "regex" and "replace"
+        # Insert values from run_cmd_vars in "file_name", "regex" and "replace"
         # (if they exist)
         for key, val in self.run_cmd_vars.items():
             var = '{' + key + '}'
@@ -140,6 +140,8 @@ class BashInstall:
                 regex = regex.replace(var, val)
             if var in replace:
                 replace = replace.replace(var, val)
+            if var in file_name:
+                file_name = file_name.replace(var, val)
 
         # Set OK status message
         status_str = 'Replaced "{old}" with "{replace}" in file "{file_name}"'
