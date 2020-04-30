@@ -100,3 +100,6 @@ https://www.youtube.com/watch?v=lP5Xv7QqXiM&start=110
 
 #### 2.26 Fuck you motherfucker
 https://www.youtube.com/watch?v=n5BrLfbCoGQ
+
+#### 2.27 Pretend not to hear
+https://www.youtube.com/watch?v=S4AmLcBLZWY&start=43&app=desktop
