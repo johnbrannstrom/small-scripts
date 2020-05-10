@@ -103,3 +103,6 @@ https://www.youtube.com/watch?v=n5BrLfbCoGQ
 
 #### 2.27 Pretend not to hear
 https://www.youtube.com/watch?v=S4AmLcBLZWY&start=43&app=desktop
+
+#### 2.28 Beerfest
+https://www.youtube.com/watch?v=aDaxX_bGsDc&t=50s
