@@ -110,3 +110,9 @@ https://www.youtube.com/watch?v=aDaxX_bGsDc&t=50s
 #### 2.29 FUBAR
 https://www.youtube.com/watch?v=gwvFNtWP0Ag&start=75
 
+#### 2.30 Bullshit
+https://www.youtube.com/watch?v=zKX4LGlF_Mo
+
+#### 2.31 Whazaaaaa
+https://www.youtube.com/watch?v=W16qzZ7J5YQ
+
