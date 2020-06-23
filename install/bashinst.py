@@ -105,6 +105,32 @@ class BashInstall:
             if force_first:
                 self.first = True
 
+    def expand_vars(self, string: str):
+        """
+        Expand run command variables in string.
+
+        :param string: Target to expand variables in.
+        :rtype:   str
+        :returns: String with expanded variables.
+
+        """
+        for key, val in self.run_cmd_vars.items():
+            var = '{' + key + '}'
+            if var in string:
+                string = string.replace(var, val)
+        return string
+
+    def path_exists(self, path: str):
+        """
+        Same as os.path.exists but with expanded run variables.
+
+        :param path: Target path to test.
+        :rtype:   bool
+        :returns: If file or folder exists
+
+        """
+        return os.path.exists(self.expand_vars(path))
+
     # noinspection PyShadowingNames,PyUnboundLocalVariable
     def edit_line(self, file_name: str, regex: str, replace: str,
                   mode: str = None, show_ok: bool = None):
@@ -133,15 +159,9 @@ class BashInstall:
 
         error = ''
         # Insert values from run_cmd_vars in "file_name", "regex" and "replace"
-        # (if they exist)
-        for key, val in self.run_cmd_vars.items():
-            var = '{' + key + '}'
-            if var in regex:
-                regex = regex.replace(var, val)
-            if var in replace:
-                replace = replace.replace(var, val)
-            if var in file_name:
-                file_name = file_name.replace(var, val)
+        regex = self.expand_vars(regex)
+        replace = self.expand_vars(replace)
+        file_name = self.expand_vars(file_name)
 
         # Set OK status message
         status_str = 'Replaced "{old}" with "{replace}" in file "{file_name}"'
@@ -249,13 +269,8 @@ class BashInstall:
             show_ok = self._show_ok
 
         # Insert values from run_cmd_vars in "file_name" and "content"
-        # (if they exist)
-        for key, val in self.run_cmd_vars.items():
-            var = '{' + key + '}'
-            if var in file_name:
-                file_name = file_name.replace(var, val)
-            if var in content:
-                content = content.replace(var, val)
+        file_name = self.expand_vars(file_name)
+        content = self.expand_vars(content)
 
         # Write to file
         error = ''
@@ -323,10 +338,7 @@ class BashInstall:
             show_ok = self._show_ok
 
         # Insert values from run_cmd_vars if they exist
-        for key, val in self.run_cmd_vars.items():
-            var = '{' + key + '}'
-            if var in command:
-                command = command.replace(var, val)
+        command = self.expand_vars(command)
 
         # Handle regular and verbose mode
         if mode.lower() == 'regular' or mode.lower() == 'verbose':
