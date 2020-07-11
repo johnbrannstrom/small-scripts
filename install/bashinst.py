@@ -120,6 +120,15 @@ class BashInstall:
                 string = string.replace(var, val)
         return string
 
+    def bprint(self, string: str):
+        """
+        Same as print but with expanded run variables.
+
+        :param string: Target string to print.
+
+        """
+        print(self.expand_vars(string))
+
     def path_exists(self, path: str):
         """
         Same as os.path.exists but with expanded run variables.
