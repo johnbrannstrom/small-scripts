@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 .. moduleauthor:: John Brännström <john.brannstrom@gmail.com>
@@ -23,7 +23,7 @@ import re
 class BashInstall:
     """Installer for Bash."""
 
-    actions_choices: dict = {
+    actions_choices = {
         'default': 'Default action',
         'all': 'Run all actions'
     }
@@ -31,7 +31,7 @@ class BashInstall:
     list  as needed."""
 
     # noinspection PyShadowingNames
-    def __init__(self, project: str, script: str):
+    def __init__(self, project, script):
         """
         Initializes BashInstall.
 
@@ -105,7 +105,7 @@ class BashInstall:
             if force_first:
                 self.first = True
 
-    def expand_vars(self, string: str):
+    def expand_vars(self, string):
         """
         Expand run command variables in string.
 
@@ -120,16 +120,26 @@ class BashInstall:
                 string = string.replace(var, val)
         return string
 
-    def bprint(self, string: str):
+    def _fprint(self, string):
+        """
+        Same as print, but also flushes standard out after print.
+
+        :param string: Target string to print.
+
+        """
+        print(self.expand_vars(string))
+        sys.stdout.flush()
+
+    def bprint(self, string):
         """
         Same as print but with expanded run variables.
 
         :param string: Target string to print.
 
         """
-        print(self.expand_vars(string))
+        self._fprint(self.expand_vars(string))
 
-    def path_exists(self, path: str):
+    def path_exists(self, path):
         """
         Same as os.path.exists but with expanded run variables.
 
@@ -141,8 +151,7 @@ class BashInstall:
         return os.path.exists(self.expand_vars(path))
 
     # noinspection PyShadowingNames,PyUnboundLocalVariable
-    def edit_line(self, file_name: str, regex: str, replace: str,
-                  mode: str = None, show_ok: bool = None):
+    def edit_line(self, file_name, regex, replace, mode=None, show_ok=None):
         """
         Edit line in file matching a regular expression.
 
@@ -232,13 +241,13 @@ class BashInstall:
         if mode == 'quiet' and error != '':
             status = '[ \033[1;91mERROR\033[0m ] '
             status_str = status + status_str
-            print(status_str, flush=True)
+            self._fprint(status_str)
             if error is not None:
-                print(error, flush=True)
+                self._fprint(error)
 
         # Print regular mode
         elif mode == 'regular' and (error != '' or show_ok):
-            print(status_str, flush=True)
+            self._fprint(status_str)
 
         # Print verbose and status mode
         elif (mode == 'verbose' or mode == 'status') and (
@@ -247,13 +256,13 @@ class BashInstall:
             if error != '':
                 status = '[ \033[1;91mERROR\033[0m ] '
             status_str = status + status_str
-            print(status_str, flush=True)
+            self._fprint(status_str)
             if error != '' and error is not None:
-                print(error, flush=True)
+                self._fprint(error)
 
     # noinspection PyShadowingNames
-    def write_file(self, file_name: str, content: str, mode: str = None,
-                   show_ok: bool = None, file_mode: str = 'w'):
+    def write_file(self, file_name, content, mode=None, show_ok=None,
+                   file_mode='w'):
         """
         Write content to file.
 
@@ -302,12 +311,12 @@ class BashInstall:
         if mode == 'quiet' and error != '':
             status = '[ \033[1;91mERROR\033[0m ] '
             status_str = status + status_str
-            print(status_str, flush=True)
-            print(error, flush=True)
+            self._fprint(status_str)
+            self._fprint(error)
 
         # Print regular mode
         elif mode == 'regular' and (error != '' or show_ok):
-            print(status_str, flush=True)
+            self._fprint(status_str)
 
         # Print verbose and status mode
         elif (mode == 'verbose' or mode == 'status') and (
@@ -316,14 +325,14 @@ class BashInstall:
             if error != '':
                 status = '[ \033[1;91mERROR\033[0m ] '
             status_str = status + status_str
-            print(status_str, flush=True)
+            self._fprint(status_str)
             if error != '':
-                print(error, flush=True)
+                self._fprint(error)
             elif mode == 'verbose':
-                print(content, flush=True)
+                self._fprint(content)
 
     # noinspection PyShadowingNames,PyTypeChecker,PyUnboundLocalVariable
-    def run_cmd(self, command: str, mode: str = None, show_ok: bool = None):
+    def run_cmd(self, command, mode=None, show_ok=None):
         """
         Run a command and print status.
 
@@ -351,7 +360,7 @@ class BashInstall:
 
         # Handle regular and verbose mode
         if mode.lower() == 'regular' or mode.lower() == 'verbose':
-            print(command, flush=True)
+            self._fprint(command)
             error = False
             stdout = ''
             with subprocess.Popen(command,
@@ -362,12 +371,14 @@ class BashInstall:
                                   universal_newlines=True) as p:
                 for line in p.stdout:
                     stdout += line
-                    print(line, end='', flush=True)
+                    print line,
+                    sys.stdout.flush()
                 for line in p.stderr:
                     error = True
-                    print(line, end='', flush=True)
+                    print line,
+                    sys.stdout.flush()
 
-            # Print status for verbose mode
+                    # Print status for verbose mode
             if mode.lower() == 'verbose':
                 if error:
                     status = '\033[1;91mERROR\033[0m'
@@ -378,7 +389,7 @@ class BashInstall:
                 status_str = "[ {status} ] {command}"
                 status_str = status_str.format(status=status,
                                                command=command)
-                print(status_str, flush=True)
+                self._fprint(status_str)
 
             # Return stdout
             return stdout
@@ -401,7 +412,7 @@ class BashInstall:
                 status_str = status_str.format(status=status,
                                                command=command,
                                                stderr=stderr)
-                print(status_str, flush=True)
+                self._fprint(status_str)
 
             # Return stdout
             return result.stdout.decode('utf-8')
@@ -420,7 +431,7 @@ class BashInstall:
                 status_str = status_str.format(status=status,
                                                command=command,
                                                stderr=stderr)
-                print(status_str, flush=True)
+                self._fprint(status_str)
 
             # Return stdout
             return result.stdout.decode('utf-8')
