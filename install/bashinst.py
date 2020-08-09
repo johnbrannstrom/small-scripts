@@ -20,6 +20,25 @@ import sys
 import re
 
 
+class YesNoError(Exception):
+    """Error for malformed yes/no value."""
+
+    def __init__(self, yes_no: str):
+        """
+        Constructor function.
+        :param yes_no: Yes/no value that caused the error.
+        """
+        message = 'Error, "{yes_no}" is not a valid yes/no value!'
+        self._message = message.format(yes_no=yes_no)
+
+    # noinspection PyUnresolvedReferences
+    def __str__(self):
+        """
+        String representation function.
+        """
+        return self._message
+
+
 class BashInstall:
     """Installer for Bash."""
 
@@ -29,6 +48,26 @@ class BashInstall:
     }
     """List of available installer actions. Actions should be added to this 
     list  as needed."""
+
+    ok_string = '[ \033[1;32m  OK   \033[0m ] '
+    warning_string = '[ \033[1;33mWARNING\033[0m ] '
+    error_string = '[ \033[1;91m ERROR \033[0m ] '
+    unknown_string = '[ \033[1;49mUNKNOWN\033[0m ] '
+
+    @staticmethod
+    def yes_no_to_bool(yes_no: str):
+        """
+        Converts yes or no to bool.
+        :param yes_no: Non case sensitive yes/no or y/n.
+        :rtype:  bool
+        :return: True for yes or false for no.
+        :raises: YesNoError
+        """
+        if yes_no.lower() == 'yes' or yes_no.lower() == 'y':
+            return True
+        elif yes_no.lower() == 'no' or yes_no.lower() == 'n':
+            return False
+        raise YesNoError(yes_no)
 
     # noinspection PyShadowingNames
     def __init__(self, project: str, script: str):
@@ -61,15 +100,36 @@ class BashInstall:
         args = self._parse_command_line_options()
         self.actions = args.actions
         skip = self.skip = args.skip
+        no_prompt = args.no_prompt
         self._show_ok = show_ok = args.show_ok
         remote = args.remote
         verbose = args.verbose
+        dry_run = args.dry_run
         force_first = args.force_first
 
         # Set default values according to command line options
         self._mode = 'status'
         if verbose:
             self._mode = 'verbose'
+        if dry_run:
+            self._mode = 'dry-run'
+
+        # Prompt before running
+        if not no_prompt:
+            host = 'localhost'
+            if remote != "":
+                host = remote
+            while True:
+                try:
+                    prompt = self.expand_vars(
+                        "Are you sure you want to run {PROJECT} installer on {"
+                        "host} (yes/no)? ")
+                    yes = self.yes_no_to_bool(input(prompt.format(host=host)))
+                    break
+                except YesNoError:
+                    pass
+            if not yes:
+                sys.exit(0)
 
         # Copy program and installer script to remote location and
         # run it there instead
@@ -142,7 +202,8 @@ class BashInstall:
 
     # noinspection PyShadowingNames,PyUnboundLocalVariable
     def edit_line(self, file_name: str, regex: str, replace: str,
-                  mode: str = None, show_ok: bool = None):
+                  mode: str = None, show_ok: bool = None,
+                  warning: bool = False):
         """
         Edit line in file matching a regular expression.
 
@@ -157,6 +218,7 @@ class BashInstall:
                           "verbose": Print status, command, stdout and stderr
                                      to screen.
                           "quiet":   Only print errors.
+        :param warning:   If warning status should be shown instead of error.
         :param show_ok:   If ok status should be shown.
 
         """
@@ -215,6 +277,11 @@ class BashInstall:
                                                file_name=file_name)
                 error = None
 
+        # Handle dry run mode
+        if mode == 'dry-run':
+            print(status_str, flush=True)
+            return None
+
         # Write file
         if error == '':
             try:
@@ -230,7 +297,9 @@ class BashInstall:
 
         # Print quiet mode
         if mode == 'quiet' and error != '':
-            status = '[ \033[1;91mERROR\033[0m ] '
+            status = self.error_string
+            if warning:
+                status = self.warning_string
             status_str = status + status_str
             print(status_str, flush=True)
             if error is not None:
@@ -243,9 +312,11 @@ class BashInstall:
         # Print verbose and status mode
         elif (mode == 'verbose' or mode == 'status') and (
                 error != '' or show_ok):
-            status = '[ \033[1;32m OK  \033[0m ] '
-            if error != '':
-                status = '[ \033[1;91mERROR\033[0m ] '
+            status = self.ok_string
+            if error != '' and warning:
+                status = self.warning_string
+            elif error != '':
+                status = self.error_string
             status_str = status + status_str
             print(status_str, flush=True)
             if error != '' and error is not None:
@@ -253,7 +324,8 @@ class BashInstall:
 
     # noinspection PyShadowingNames
     def write_file(self, file_name: str, content: str, mode: str = None,
-                   show_ok: bool = None, file_mode: str = 'w'):
+                   show_ok: bool = None, file_mode: str = 'w',
+                   warning: bool = False):
         """
         Write content to file.
 
@@ -267,6 +339,7 @@ class BashInstall:
                                      to screen.
                           "quiet":   Only print errors.
         :param show_ok:   If ok status should be shown.
+        :param warning:   If warning status should be shown instead of error.
         :param file_mode: Setting this to "w" till overwrite the file.
                           Setting this to "a" till append to the file.
 
@@ -287,6 +360,10 @@ class BashInstall:
         if file_mode == 'a':
             status_str = 'Appended content to "{file_name}"'
         status_str = status_str.format(file_name=file_name)
+        # Handle dry run mode
+        if mode == 'dry-run':
+            print(status_str, flush=True)
+            return None
         try:
             file = open(file_name, file_mode)
             file.write(content)
@@ -300,7 +377,9 @@ class BashInstall:
 
         # Print quiet mode
         if mode == 'quiet' and error != '':
-            status = '[ \033[1;91mERROR\033[0m ] '
+            status = self.error_string
+            if warning:
+                status = self.warning_string
             status_str = status + status_str
             print(status_str, flush=True)
             print(error, flush=True)
@@ -312,9 +391,11 @@ class BashInstall:
         # Print verbose and status mode
         elif (mode == 'verbose' or mode == 'status') and (
                 error != '' or show_ok):
-            status = '[ \033[1;32m OK  \033[0m ] '
-            if error != '':
-                status = '[ \033[1;91mERROR\033[0m ] '
+            status = self.ok_string
+            if error != '' and warning:
+                status = self.warning_string
+            elif error != '':
+                status = self.error_string
             status_str = status + status_str
             print(status_str, flush=True)
             if error != '':
@@ -323,7 +404,8 @@ class BashInstall:
                 print(content, flush=True)
 
     # noinspection PyShadowingNames,PyTypeChecker,PyUnboundLocalVariable
-    def run_cmd(self, command: str, mode: str = None, show_ok: bool = None):
+    def run_cmd(self, command: str, mode: str = None, show_ok: bool = None,
+                warning: bool = False):
         """
         Run a command and print status.
 
@@ -336,6 +418,7 @@ class BashInstall:
                                    screen.
                         "quiet":   Only print errors.
         :param show_ok: If ok status should be shown.
+        :param warning: If warning status should be shown instead of error.
         :rtype:   str
         :returns: Target command stdout
 
@@ -345,6 +428,7 @@ class BashInstall:
             mode = self._mode
         if show_ok is None:
             show_ok = self._show_ok
+
 
         # Insert values from run_cmd_vars if they exist
         command = self.expand_vars(command)
@@ -369,13 +453,15 @@ class BashInstall:
 
             # Print status for verbose mode
             if mode.lower() == 'verbose':
-                if error:
-                    status = '\033[1;91mERROR\033[0m'
+                if error and warning:
+                    status = self.warning_string
+                elif error:
+                    status = self.error_string
                 else:
-                    status = '\033[1;32m OK  \033[0m'
+                    status = self.ok_string
 
                 # Print status
-                status_str = "[ {status} ] {command}"
+                status_str = "{status}{command}"
                 status_str = status_str.format(status=status,
                                                command=command)
                 print(status_str, flush=True)
@@ -389,15 +475,18 @@ class BashInstall:
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
             if result.returncode == 0:
-                status = '\033[1;32m OK  \033[0m'
+                status = self.ok_string
                 stderr = ''
+            elif result.returncode != 0 and warning:
+                status = self.warning_string
+                stderr = '\n' + result.stderr.decode('utf-8')
             else:
-                status = '\033[1;91mERROR\033[0m'
+                status = self.error_string
                 stderr = '\n' + result.stderr.decode('utf-8')
 
             # Print status
             if stderr != '' or show_ok:
-                status_str = "[ {status} ] {command}{stderr}"
+                status_str = "{status}{command}{stderr}"
                 status_str = status_str.format(status=status,
                                                command=command,
                                                stderr=stderr)
@@ -405,6 +494,10 @@ class BashInstall:
 
             # Return stdout
             return result.stdout.decode('utf-8')
+
+        # Handle dry run mode
+        elif mode == 'dry-run':
+            print(command, flush=True)
 
         # Handle quiet mode
         else:
@@ -414,9 +507,9 @@ class BashInstall:
 
             # Print status if we had an error
             if result.returncode > 0:
-                status = '\033[1;91mERROR\033[0m'
+                status = self.error_string
                 stderr = '\n' + result.stderr.decode('utf-8')
-                status_str = "[ {status} ] {command}{stderr}"
+                status_str = "{status}{command}{stderr}"
                 status_str = status_str.format(status=status,
                                                command=command,
                                                stderr=stderr)
@@ -441,6 +534,8 @@ class BashInstall:
             'Supplying this flag will skip as many time consuming steps as '
             'possible to speed up the installation process. This is used for '
             'development purposes only.')
+        no_prompt_help = "Don't prompt before running."
+        dry_run_help = "Only print commands to screen (don't run them)."
         show_ok_help = 'Supplying this flag will show actions with ok status.'
         verbose_help = 'Supplying this flag will enable all possible output.'
         remote_help = 'Install program on remote user@host.'
@@ -458,6 +553,12 @@ class BashInstall:
                             required=False)
         parser.add_argument('-s', '--skip', default=False, action='store_true',
                             help=skip_help, required=False)
+        parser.add_argument('-d', '--dry-run', default=False,
+                            action='store_true', help=dry_run_help,
+                            required=False)
+        parser.add_argument('-p', '--no-prompt', default=False,
+                            action='store_true', help=no_prompt_help,
+                            required=False)
         parser.add_argument('-o', '--show-ok', default=False,
                             action='store_true',
                             help=show_ok_help, required=False)
@@ -474,97 +575,68 @@ class BashInstall:
 
         return args
 
-# Below is a commented out example of how to use BashInstall
-# bash_installer = BashInstall(project='project',
-#                              script=os.path.basename(__file__))
-# run_cmd = bash_installer.run_cmd
-# write_file = bash_installer.write_file
-# edit_line = bash_installer.edit_line
-# first = bash_installer.first
-# skip = bash_installer.skip
-# run_cmd_vars = bash_installer.run_cmd_vars
-#
-# # List of packages to install with apt
-# APT_PACKAGE_LIST = [
-#     'python3=3.7.3-1', 'openssl=1.1.1c-1', 'build-essential=12.6',
-#     'tk-dev=8.6.9+1', 'libncurses5-dev=6.1+20181013-2+deb10u2',
-#     'libncursesw5-dev=6.1+20181013-2+deb10u2', 'libreadline-dev=7.0-5',
-#     'libgdbm-dev=1.18.1-4', 'libsqlite3-dev=3.27.2-3',
-#     'libssl-dev=1.1.1d-0+deb10u2', 'libbz2-dev=1.0.6-9.2~deb10u1',
-#     'libexpat1-dev=2.2.6-2+deb10u1', 'liblzma-dev=5.2.4-1',
-#     'zlib1g-dev=1:1.2.11.dfsg-1','libffi-dev=3.2.1-9', 'uuid-dev=2.33.1-0.1',
-#     'python3-pip=18.1-5+rpt1', 'apache2=2.4.38-3+deb10u3',
-#     'libapache2-mod-wsgi-py3=4.6.5-1', 'rabbitmq-server=3.7.8-4',
-#     'supervisor=3.3.5-1']
-#
-# # List of packages to install with pip3
-# PIP3_PACKAGE_LIST = [
-#     'bricknil==0.9.3', 'flask==1.1.1', 'pika==1.1.0','bricknil-bleak==0.3.1',
-#     'coloredlogs==10.0', 'verboselogs==1.7']
-#
-# # Create supervisor log dir
-# run_cmd('mkdir -p /var/log/supervisor')
-#
-# # Set bash_aliases for root
-# run_cmd('''sed -i "/alias ls='ls -lah --color=auto'/d" /root/.bashrc''',
-#         mode='quiet')
-# run_cmd('''echo "alias ls='ls -lah --color=auto'" >> /root/.bashrc''')
-#
-# # Install packages with apt
-# if not skip:
-#     run_cmd('apt-get update')
-#     for package in APT_PACKAGE_LIST:
-#         run_cmd('apt-get -y install {package}'.format(package=package))
-#
-# # Install packages with pip3
-# if not skip:
-#     for package in PIP3_PACKAGE_LIST:
-#         run_cmd('pip3 install {package}'.format(package=package))
-#
-# # Create project user
-# if not skip:
-#     run_cmd('useradd -m {PROJECT}')
-#
-# # Create directories, move files, and set permissions
-# run_cmd('rm -Rf /srv/flask_wsgi', mode='quiet')
-# run_cmd('rm -Rf /srv/{PROJECT}', mode='quiet')
-# run_cmd('mkdir /srv/flask_wsgi')
-# run_cmd('mkdir /srv/{PROJECT}')
-# run_cmd('mkdir -p /var/log/{PROJECT}')
-# run_cmd('chown -R {PROJECT}:{PROJECT} /var/log/{PROJECT}')
-# run_cmd('chmod 755 /var/log/{PROJECT}')
-# run_cmd('cp {DIR}/other/legcocar_template.conf /srv/{PROJECT}/')
-# run_cmd('cp -R {DIR}/html_static /srv/{PROJECT}/')
-# run_cmd('cp -R {DIR}/html_templates /srv/{PROJECT}/')
-# run_cmd('cp {DIR}/src/flaskserver.py /srv/{PROJECT}/')
-# run_cmd('cp {DIR}/src/wsgi.py /srv/flask_wsgi/')
-# run_cmd('cp {DIR}/other/000-default.conf /etc/apache2/sites-available/')
-# run_cmd('chown -R {PROJECT}:{PROJECT} /srv/flask_wsgi')
-# run_cmd('chmod 755 /srv/flask_wsgi')
-# run_cmd('chown -R {PROJECT}:{PROJECT} /srv/{PROJECT}')
-# run_cmd('chmod 755 /srv/{PROJECT}')
-#
-# # Restart apache2 for settings to take affect
-# run_cmd('service apache2 restart')
-#
-# # Create rabbitMQ .erlang.cookie
-# if not skip:
-#     run_cmd_vars['ERLANG_COOKIE'] = 'HEIQLGKPYPKGHVQFRPRF'
-#     run_cmd('echo -n {ERLANG_COOKIE} > /var/lib/rabbitmq/.erlang.cookie')
-#     run_cmd('chown rabbitmq.rabbitmq /var/lib/rabbitmq/.erlang.cookie')
-#     run_cmd('chmod 400 /var/lib/rabbitmq/.erlang.cookie')
-#
-# # /etc/rabbitmq/enabled_plugins
-# if not skip:
-#     run_cmd(
-#         '''echo '[rabbitmq_management].' > /etc/rabbitmq/enabled_plugins''')
-#     run_cmd('chown rabbitmq.rabbitmq /etc/rabbitmq/enabled_plugins')
-#
-# # Create RabbitMQ project user
-# if not skip:
-#     run_cmd('rabbitmqctl add_user {PROJECT} {PROJECT}')
-#     run_cmd('rabbitmqctl set_user_tags {PROJECT} administrator')
-#
-# # Restart RabbitMQ server
-# if not skip:
-#     run_cmd('service rabbitmq-server restart')
+
+# Below is an example of how to use BashInstall
+BashInstall.actions_choices.update({
+    'custom_option': 'Custom option added for specific installer.'
+})
+bash_installer = BashInstall(project='project_name',
+                             script=os.path.basename(__file__))
+run_cmd = bash_installer.run_cmd
+write_file = bash_installer.write_file
+edit_line = bash_installer.edit_line
+bprint = bash_installer.bprint
+expand_vars = bash_installer.expand_vars
+first = bash_installer.first
+skip = bash_installer.skip
+actions = bash_installer.actions
+run_cmd_vars = bash_installer.run_cmd_vars
+
+# Test default action
+if 'default' in actions:
+    run_cmd('echo "Testing default action"')
+
+# Test default action and first
+if 'default' in actions and first:
+    run_cmd('echo "Testing default action and first"')
+
+# Test error status
+if 'default' in actions:
+    run_cmd('not_a_command')
+
+# Test warning status
+if 'default' in actions:
+    run_cmd('not_a_command', warning=True)
+
+# Test writing to file
+if 'default' in actions:
+    write_file('/tmp/bash_install_test_file', 'next_line_1\ntest_line_2\n')
+
+# Test writing to file error
+if 'default' in actions:
+    write_file('/9786sadg872613gcasdh987ygh/bash_install_test_file',
+               'next_line_1\ntest_line_2\n')
+
+# Test writing to file warning
+if 'default' in actions:
+    write_file('/9786sadg872613gcasdh987ygh/bash_install_test_file', '',
+               warning=True)
+
+# Test default action
+if 'default' in actions:
+    run_cmd('echo "Testing default action"')
+
+# Test edit line success
+if 'default' in actions:
+    edit_line('/tmp/bash_install_test_file',
+              regex='.*_1', replace='replaced_1')
+
+# Test edit line fail
+if 'default' in actions:
+    edit_line('/tmp/bash_install_test_file',
+              regex='uhsdf786sdt', replace='replaced_1')
+
+# Test edit line warning
+if 'default' in actions:
+    edit_line('/tmp/bash_install_test_file',
+              regex='uhsdf786sdt', replace='replaced_1', warning=True)
