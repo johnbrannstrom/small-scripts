@@ -141,7 +141,7 @@ class BashInstall:
                          mode='regular')
 
             # Run install script on remote side
-            opts = ' -a ' + ' '.join(args.actions)
+            opts = ' -p -a ' + ' '.join(args.actions)
             command = "ssh {REMOTE} '/tmp/{PROJECT}/{SCRIPT}{opts}'"
             if skip:
                 opts += ' -s'
