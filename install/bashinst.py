@@ -223,7 +223,7 @@ class BashInstall:
 
         """
         # Set default values
-        if mode is None:
+        if mode is None or self._mode == 'dry-run':
             mode = self._mode
         if show_ok is None:
             show_ok = self._show_ok
@@ -345,7 +345,7 @@ class BashInstall:
 
         """
         # Set default values
-        if mode is None:
+        if mode is None or self._mode == 'dry-run':
             mode = self._mode
         if show_ok is None:
             show_ok = self._show_ok
@@ -424,7 +424,7 @@ class BashInstall:
 
         """
         # Set default values
-        if mode is None:
+        if mode is None or self._mode == 'dry-run':
             mode = self._mode
         if show_ok is None:
             show_ok = self._show_ok
