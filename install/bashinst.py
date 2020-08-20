@@ -49,6 +49,16 @@ class BashInstall:
     """List of available installer actions. Actions should be added to this 
     list  as needed."""
 
+    project = 'Default'
+    """Script project name."""
+
+    description = 'Installer script for {}.'.format(project)
+    """Description of what the script does."""
+
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.RawTextHelpFormatter)
+
     ok_string = '[ \033[1;32m  OK   \033[0m ] '
     warning_string = '[ \033[1;33mWARNING\033[0m ] '
     error_string = '[ \033[1;91m ERROR \033[0m ] '
@@ -70,24 +80,23 @@ class BashInstall:
         raise YesNoError(yes_no)
 
     # noinspection PyShadowingNames
-    def __init__(self, project: str, script: str):
+    def __init__(self, script: str):
         """
         Initializes BashInstall.
 
-        :param project: Project name.
         :param script: Install script name.
 
         """
         self.first = None
         self.skip = None
+        self.cmd_line_args = None
 
         # Adding variables and values in this dictionary will enable them to be
         # substituted into run_cmd commands
         self.run_cmd_vars = dict()
 
         # Name of project
-        self.run_cmd_vars['PROJECT'] = project
-        self.project = project
+        self.run_cmd_vars['PROJECT'] = self.project
 
         # Install script name
         self.run_cmd_vars['SCRIPT'] = script
@@ -539,35 +548,30 @@ class BashInstall:
         show_ok_help = 'Supplying this flag will show actions with ok status.'
         verbose_help = 'Supplying this flag will enable all possible output.'
         remote_help = 'Install program on remote user@host.'
-        description = (
-            'Installer script for the {project}.'.format(project=self.project))
-        parser = argparse.ArgumentParser(
-            description=description,
-            formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument('-a', '--actions', default=['default'], nargs="+",
-                            choices=list(self.actions_choices.keys()),
-                            help=action_help,
-                            required=False)
-        parser.add_argument('-f', '--force-first', default=False,
-                            action='store_true', help=force_first_help,
-                            required=False)
-        parser.add_argument('-s', '--skip', default=False, action='store_true',
-                            help=skip_help, required=False)
-        parser.add_argument('-d', '--dry-run', default=False,
-                            action='store_true', help=dry_run_help,
-                            required=False)
-        parser.add_argument('-p', '--no-prompt', default=False,
-                            action='store_true', help=no_prompt_help,
-                            required=False)
-        parser.add_argument('-o', '--show-ok', default=False,
-                            action='store_true',
-                            help=show_ok_help, required=False)
-        parser.add_argument('-v', '--verbose', default=False,
-                            action='store_true',
-                            help=verbose_help, required=False)
-        parser.add_argument('-r', '--remote', type=str, default="",
-                            help=remote_help, required=False)
-        args = parser.parse_args()
+        self.parser.add_argument('-a', '--actions', default=['default'],
+                                 nargs="+", help=action_help, required=False,
+                                 choices=list(self.actions_choices.keys()))
+        self.parser.add_argument('-f', '--force-first', default=False,
+                                 action='store_true', help=force_first_help,
+                                 required=False)
+        self.parser.add_argument('-s', '--skip', default=False,
+                                 action='store_true', help=skip_help,
+                                 required=False)
+        self.parser.add_argument('-d', '--dry-run', default=False,
+                                 action='store_true', help=dry_run_help,
+                                 required=False)
+        self.parser.add_argument('-p', '--no-prompt', default=False,
+                                 action='store_true', help=no_prompt_help,
+                                 required=False)
+        self.parser.add_argument('-o', '--show-ok', default=False,
+                                 action='store_true', help=show_ok_help,
+                                 required=False)
+        self.parser.add_argument('-v', '--verbose', default=False,
+                                 action='store_true', help=verbose_help,
+                                 required=False)
+        self.parser.add_argument('-r', '--remote', type=str, default="",
+                                 help=remote_help, required=False)
+        args = self.cmd_line_args.self.parser.parse_args()
 
         # Add all actions if "all" is found in action list
         if 'all' in args.actions:
@@ -580,8 +584,11 @@ class BashInstall:
 BashInstall.actions_choices.update({
     'custom_option': 'Custom option added for specific installer.'
 })
-bash_installer = BashInstall(project='project_name',
-                             script=os.path.basename(__file__))
+BashInstall.project = 'project_name'
+custom_arg_help = 'Extra custom argument.'
+BashInstall.parser.add_argument('--custom-arg1', default='value1', type=str,
+                                help=custom_arg_help, required=False)
+bash_installer = BashInstall(script=os.path.basename(__file__))
 run_cmd = bash_installer.run_cmd
 write_file = bash_installer.write_file
 edit_line = bash_installer.edit_line
@@ -591,10 +598,15 @@ first = bash_installer.first
 skip = bash_installer.skip
 actions = bash_installer.actions
 run_cmd_vars = bash_installer.run_cmd_vars
+cmd_line_args = bash_installer.cmd_line_args
 
 # Test default action
 if 'default' in actions:
     run_cmd('echo "Testing default action"')
+
+# Print value of custom argument
+if 'default' in actions:
+    bprint(cmd_line_args.custom_arg1)
 
 # Test default action and first
 if 'default' in actions and first:
