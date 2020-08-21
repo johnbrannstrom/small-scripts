@@ -118,3 +118,6 @@ https://www.youtube.com/watch?v=W16qzZ7J5YQ
 
 #### 2.32 Bridge is up
 https://www.youtube.com/watch?v=Clz9ykXMkeM
+
+#### 2.33 Do it, do it now!
+https://www.youtube.com/watch?v=a6P40wLThbc
