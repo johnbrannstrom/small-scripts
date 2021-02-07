@@ -108,7 +108,7 @@ https://www.youtube.com/watch?v=S4AmLcBLZWY&start=43&app=desktop
 https://www.youtube.com/watch?v=aDaxX_bGsDc&t=50s
 
 #### 2.29 FUBAR
-https://www.youtube.com/watch?v=gwvFNtWP0Ag&start=75
+https://www.youtube.com/watch?v=KhHQcsev9lo&start=70
 
 #### 2.30 Bullshit
 https://www.youtube.com/watch?v=zKX4LGlF_Mo
@@ -121,3 +121,6 @@ https://www.youtube.com/watch?v=Clz9ykXMkeM
 
 #### 2.33 Do it, do it now!
 https://www.youtube.com/watch?v=a6P40wLThbc
+
+#### 2.34 Terrible dance
+https://www.youtube.com/watch?v=HQu_NLRvULM&start=14
