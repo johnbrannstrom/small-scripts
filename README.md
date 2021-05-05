@@ -124,3 +124,6 @@ https://www.youtube.com/watch?v=a6P40wLThbc
 
 #### 2.34 Terrible dance
 https://www.youtube.com/watch?v=HQu_NLRvULM&start=14
+
+#### 2.35 Gooood morning Vietnam
+https://www.youtube.com/watch?v=BIikfdNIHQE&t=4s
