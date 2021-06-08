@@ -127,3 +127,15 @@ https://www.youtube.com/watch?v=HQu_NLRvULM&start=14
 
 #### 2.35 Gooood morning Vietnam
 https://www.youtube.com/watch?v=BIikfdNIHQE&t=4s
+
+#### 2.36 Good morning 2
+https://www.youtube.com/watch?v=qu4v5hB1dKk
+
+#### 2.37 Good morning 3
+https://www.youtube.com/watch?v=9bMqDykDxeg&t=2s
+
+#### 2.38 TPS report
+https://www.youtube.com/watch?v=Fy3rjQGc6lA
+
+#### 2.39 Welcome to the world of tomorrow
+https://www.youtube.com/watch?v=aiwA0JrGfjA
