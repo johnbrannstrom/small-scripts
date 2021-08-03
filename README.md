@@ -142,3 +142,7 @@ https://www.youtube.com/watch?v=Fy3rjQGc6lA
 
 #### 2.40 Welcome to the world of tomorrow
 https://www.youtube.com/watch?v=aiwA0JrGfjA
+
+#### 2.41 Case
+https://www.youtube.com/watch?v=2AB9zPfXqQQ
+https://www.youtube.com/watch?v=guv5LUT1AFw
