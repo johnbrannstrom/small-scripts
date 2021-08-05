@@ -143,6 +143,9 @@ https://www.youtube.com/watch?v=Fy3rjQGc6lA
 #### 2.40 Welcome to the world of tomorrow
 https://www.youtube.com/watch?v=aiwA0JrGfjA
 
-#### 2.41 Case
+#### 2.41 Case of the mondays
 https://www.youtube.com/watch?v=2AB9zPfXqQQ
 https://www.youtube.com/watch?v=guv5LUT1AFw
+
+#### 2.42 Hell yeah
+https://www.youtube.com/watch?v=psiH5-zCW8g
