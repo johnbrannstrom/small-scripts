@@ -144,7 +144,7 @@ https://www.youtube.com/watch?v=Fy3rjQGc6lA
 https://www.youtube.com/watch?v=aiwA0JrGfjA
 
 #### 2.41 Case of the mondays
-https://www.youtube.com/watch?v=2AB9zPfXqQQ
+https://www.youtube.com/watch?v=2AB9zPfXqQQ<br>
 https://www.youtube.com/watch?v=guv5LUT1AFw
 
 #### 2.42 Hell yeah
