@@ -152,3 +152,6 @@ https://www.youtube.com/watch?v=guv5LUT1AFw
 
 #### Hell yeah
 https://www.youtube.com/watch?v=psiH5-zCW8g
+
+#### Svordomsvisan
+https://www.youtube.com/watch?v=KUaap0fRzXs&t=50s
