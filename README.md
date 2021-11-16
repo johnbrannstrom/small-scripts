@@ -146,7 +146,7 @@ https://www.youtube.com/watch?v=Fy3rjQGc6lA
 #### Welcome to the world of tomorrow
 https://www.youtube.com/watch?v=aiwA0JrGfjA
 
-#### ase of the mondays
+#### Case of the mondays
 https://www.youtube.com/watch?v=2AB9zPfXqQQ<br>
 https://www.youtube.com/watch?v=guv5LUT1AFw
 
@@ -155,3 +155,6 @@ https://www.youtube.com/watch?v=psiH5-zCW8g
 
 #### Svordomsvisan
 https://www.youtube.com/watch?v=KUaap0fRzXs&t=50s
+
+#### Christmas party
+https://www.youtube.com/watch?v=z4PHjxRiT2I&t=50s
