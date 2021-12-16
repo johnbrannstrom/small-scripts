@@ -158,3 +158,10 @@ https://www.youtube.com/watch?v=KUaap0fRzXs&t=50s
 
 #### Christmas party
 https://www.youtube.com/watch?v=z4PHjxRiT2I&t=50s
+
+#### Have a little faith baby
+https://www.youtube.com/watch?v=8fisqGENobc
+
+#### That's a little bit harsh
+https://www.youtube.com/watch?v=WRDf8uu0sSA
+
