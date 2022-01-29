@@ -165,3 +165,9 @@ https://www.youtube.com/watch?v=8fisqGENobc
 #### That's a little bit harsh
 https://www.youtube.com/watch?v=WRDf8uu0sSA
 
+#### Crazy
+https://www.youtube.com/watch?v=r6RoHBJj3SQ&t=25s
+
+#### HA HA HA shut up
+https://www.youtube.com/watch?v=22YWYAtcyEA
+
