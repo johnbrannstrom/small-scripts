@@ -120,7 +120,7 @@ https://www.youtube.com/watch?v=W16qzZ7J5YQ
 https://www.youtube.com/watch?v=Clz9ykXMkeM
 
 #### Do it, do it now!
-https://www.youtube.com/watch?v=a6P40wLThbc
+https://www.youtube.com/watch?v=HGhP3p6lI3U
 
 #### Terrible dance
 https://www.youtube.com/watch?v=HQu_NLRvULM&start=14
